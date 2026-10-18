@@ -1,20 +1,12 @@
-import { Icon, type IconName } from './Icon';
+import { PAGES, PRIMARY_PAGES, type PageId } from '../navigation';
+import { Icon } from './Icon';
 
-interface NavItem {
-  label: string;
-  icon: IconName;
-  hint: string;
+interface SidebarProps {
+  activePage: PageId;
+  onNavigate: (page: PageId) => void;
 }
 
-const navItems: NavItem[] = [
-  { label: '新建任务', icon: 'home', hint: '任务流程将在 M1 后续任务接入' },
-  { label: '助理', icon: 'bot', hint: '内置 Agent 将在 M2 接入' },
-  { label: '专家 · 技能 · 连接器', icon: 'layers', hint: '工具与 MCP 将在 M3 接入' },
-  { label: '定时任务', icon: 'clock', hint: '后台调度不在 P0 范围' },
-  { label: '资料库', icon: 'book', hint: '真实资料读取将在 M1 Task 04 接入' },
-];
-
-export function Sidebar() {
+export function Sidebar({ activePage, onNavigate }: SidebarProps) {
   return (
     <aside className="sidebar" aria-label="全局导航">
       <div className="brand">
@@ -25,29 +17,69 @@ export function Sidebar() {
       </div>
 
       <nav className="nav" aria-label="主导航">
-        {navItems.map((item) => (
-          <button key={item.label} type="button" className="nav-item" title={item.hint}>
-            <Icon name={item.icon} />
-            <span>{item.label}</span>
+        {PRIMARY_PAGES.map((page) => (
+          <button
+            key={page}
+            type="button"
+            className={`nav-item ${activePage === page ? 'active' : ''}`}
+            aria-current={activePage === page ? 'page' : undefined}
+            aria-label={PAGES[page].label}
+            onClick={() => onNavigate(page)}
+          >
+            <Icon name={PAGES[page].icon} />
+            <span>{PAGES[page].label}</span>
+            {page === 'assistant' ? <span className="beta-label">BETA</span> : null}
           </button>
         ))}
       </nav>
 
       <div className="sidebar-section">
-        <span className="section-title">空间</span>
-        <div className="space-item">
-          <Icon name="folder" size={16} />
-          <span>tiangong_agent</span>
+        <div className="sidebar-section-head">
+          <span>
+            任务 <span className="dim">(0)</span>
+          </span>
         </div>
-        <p className="space-description">Agent 学习与项目实践 · 只读关联将在 Task 04 建立</p>
+        <p className="sidebar-empty">任务记录将在本地服务接入后显示。</p>
+        <button
+          type="button"
+          className="text-link"
+          onClick={() => onNavigate('tasks')}
+        >
+          查看全部任务 <Icon name="arrow" size={14} />
+        </button>
+      </div>
+
+      <div className="sidebar-section">
+        <div className="sidebar-section-head">
+          <span>
+            空间 <span className="dim">(0)</span>
+          </span>
+        </div>
+        <p className="sidebar-empty">尚未连接工作区。目录关联将在 M1 Task 04 建立。</p>
+        <button type="button" className="text-link" disabled title="M1 Task 04 接入">
+          新建空间
+        </button>
       </div>
 
       <div className="sidebar-footer">
-        <button type="button" className="nav-item" title="模型与工具配置将在后续任务接入">
+        <button
+          type="button"
+          className={`nav-item ${activePage === 'settings' ? 'active' : ''}`}
+          aria-current={activePage === 'settings' ? 'page' : undefined}
+          aria-label="设置与工具"
+          onClick={() => onNavigate('settings')}
+        >
           <Icon name="settings" />
           <span>设置与工具</span>
         </button>
-        <p className="sidebar-boundary">脚手架阶段：未读取项目文件，未调用模型。</p>
+        <div className="user">
+          <span className="avatar">我</span>
+          <div>
+            <strong>本地用户</strong>
+            <small>本地资料 · 云端能力</small>
+          </div>
+        </div>
+        <p className="sidebar-boundary">共用导航已接通；业务数据尚未接入。</p>
       </div>
     </aside>
   );

@@ -3,49 +3,25 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
-import { _electron as electron, expect, test, type ElectronApplication, type Page } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
-const repoRoot = path.resolve(__dirname, '..', '..');
-const appRoot = path.join(repoRoot, 'apps', 'desktop');
+import {
+  appRoot,
+  launchWorkbench,
+  repoRoot,
+  type LaunchedWorkbench,
+} from './support/workbench-app';
 
-let electronApp: ElectronApplication;
+let workbench: LaunchedWorkbench;
 let page: Page;
-let dataDir: string;
-
-function electronBinary(): string {
-  const relative =
-    process.platform === 'win32'
-      ? path.join('node_modules', 'electron', 'dist', 'electron.exe')
-      : process.platform === 'darwin'
-        ? path.join('node_modules', 'electron', 'dist', 'Electron.app', 'Contents', 'MacOS', 'Electron')
-        : path.join('node_modules', 'electron', 'dist', 'electron');
-  const binary = path.join(appRoot, relative);
-  if (!fs.existsSync(binary)) {
-    throw new Error(`Electron binary not found: ${binary}`);
-  }
-  return binary;
-}
 
 test.beforeAll(async () => {
-  dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'zhixu-shell-'));
-  electronApp = await electron.launch({
-    executablePath: electronBinary(),
-    args: [appRoot],
-    cwd: appRoot,
-    env: {
-      ...process.env,
-      WORKBENCH_SERVICE_MODE: 'python',
-      WORKBENCH_REPO_ROOT: repoRoot,
-      WORKBENCH_DATA_DIR: dataDir,
-    },
-  });
-  page = await electronApp.firstWindow();
-  await page.waitForLoadState('domcontentloaded');
+  workbench = await launchWorkbench();
+  page = workbench.page;
 });
 
 test.afterAll(async () => {
-  await electronApp?.close();
-  if (dataDir) fs.rmSync(dataDir, { recursive: true, force: true });
+  await workbench?.close();
 });
 
 test('@shell renders from app origin without Node APIs', async () => {
@@ -69,10 +45,10 @@ test('@shell serves the renderer with a restrictive CSP header', async () => {
 });
 
 test('@shell blocks popup windows and external navigation', async () => {
-  const before = electronApp.windows().length;
+  const before = workbench.app.windows().length;
   const opened = await page.evaluate(() => window.open('https://example.com') === null);
   expect(opened).toBe(true);
-  expect(electronApp.windows().length).toBe(before);
+  expect(workbench.app.windows().length).toBe(before);
 
   await page.evaluate(() => {
     window.location.href = 'https://example.com/';

@@ -71,7 +71,7 @@ try {
   }
 
   Invoke-Check 'desktop e2e' {
-    npm --prefix apps/desktop run test:e2e -- --grep '@shell|@unit'
+    npm --prefix apps/desktop run test:e2e -- --grep '@shell|@unit|@nav'
   }
 
   if (Test-Path 'contracts/rpc.schema.json') {
