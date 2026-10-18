@@ -7,20 +7,57 @@ export type ExpectedRevision = number | null;
 export type Method = string;
 export type OperationId = string;
 export type ScopeId = string;
+export type Action = 'review_candidates' | 'answer_question' | 'verify_transcript' | 'approve_tool' | 'review_artifact';
+export type ExpectedRevision1 = number;
 export type JsonValue = unknown;
+export type OperationId1 = string;
+export type ScopeId1 = 'local';
+export type TaskId = string;
+export type AgentConfigVersionId = null;
+/**
+ * @maxItems 0
+ */
+export type MaterialVersionIds = [];
+export type OperationId2 = string;
+export type TaskType = 'generic' | 'question_generation' | 'interview';
+export type WorkspaceId = null;
 export type DraftId = string;
 export type OwnerId = string;
 export type OwnerType = 'local';
 export type Revision = number;
 export type SavedAt = string;
-export type ScopeId1 = 'local';
+export type ScopeId2 = 'local';
 export type OwnerId1 = string;
 export type OwnerType1 = 'local';
-export type ScopeId2 = 'local';
+export type ScopeId3 = 'local';
+export type OperationId3 = string;
+export type ScopeId4 = 'local';
+export type ScopeId5 = 'local';
+export type TaskId1 = string;
 export type Capabilities = string[];
 export type ProtocolVersion = 1;
 export type SchemaVersion = number;
 export type ServiceInstanceId = string;
+export type AfterSeq = number;
+export type Limit = number;
+export type ScopeId6 = 'local';
+export type TaskId2 = string;
+export type Limit1 = number;
+export type Offset = number;
+export type ScopeId7 = 'local';
+export type Status =
+  | (
+      | 'draft'
+      | 'queued'
+      | 'running'
+      | 'waiting_user'
+      | 'cancelling'
+      | 'completed'
+      | 'failed'
+      | 'interrupted'
+      | 'cancelled'
+    )
+  | null;
 export type MaxTokens = number;
 /**
  * @minItems 1
@@ -37,7 +74,7 @@ export type FinishReason = string;
 export type RequestId = string;
 export type Ok = true;
 export type ServiceInstanceId1 = string;
-export type Status = 'ok';
+export type Status1 = 'ok';
 export type Id = number | string | null;
 export type Jsonrpc = '2.0';
 export type Method1 = string;
@@ -57,21 +94,52 @@ export type UserMessage = string;
 export type Message = string;
 export type Id2 = number | string | null;
 export type Jsonrpc2 = '2.0';
-export type ExpectedRevision1 = number | null;
-export type OperationId1 = string;
+export type ExpectedRevision2 = number | null;
+export type OperationId4 = string;
 export type OwnerId2 = string;
 export type OwnerType2 = 'local';
-export type ScopeId3 = 'local';
+export type ScopeId8 = 'local';
 export type DraftId1 = string;
 export type Revision1 = number;
 export type SavedAt1 = string;
-export type Status1 = 'shutting_down';
+export type Status2 = 'shutting_down';
+export type ActiveRunId = string | null;
+export type AgentConfigVersionId1 = null;
+export type CreatedAt = string;
+export type LastSeq = number;
+export type Revision2 = number;
+export type Status3 =
+  'draft' | 'queued' | 'running' | 'waiting_user' | 'cancelling' | 'completed' | 'failed' | 'interrupted' | 'cancelled';
+export type TaskId3 = string;
+export type TaskType1 = 'generic' | 'question_generation' | 'interview';
+export type UpdatedAt = string;
+export type WaitingReason =
+  ('review_candidates' | 'answer_question' | 'verify_transcript' | 'approve_tool' | 'review_artifact') | null;
+export type WorkspaceId1 = null;
+export type CreatedAt1 = string;
+export type EventId = string;
+export type RunId = string | null;
+export type Seq = number;
+export type ServiceInstanceId2 = string;
+export type TaskId4 = string;
+export type TaskRevision = number;
+export type Type = string;
+export type ExpectedRevision3 = number;
+export type OperationId5 = string;
+export type ScopeId9 = 'local';
+export type TaskId5 = string;
 
 export interface WorkbenchRpcContract {
   command_meta: CommandMeta;
+  continue_task_command: ContinueTaskCommand;
+  create_task_command: CreateTaskCommand;
   draft: DraftResult;
   get_draft_command: GetDraftCommand;
+  get_operation_command: GetOperationCommand;
+  get_task_command: GetTaskCommand;
   initialize: InitializeResult;
+  list_events_command: ListEventsCommand;
+  list_tasks_command: ListTasksCommand;
   model_request: ModelRequest;
   model_result: ModelResult;
   ping: PingResult;
@@ -80,12 +148,37 @@ export interface WorkbenchRpcContract {
   save_draft_command: SaveDraftCommand;
   save_draft_result: SaveDraftResult;
   shutdown: ShutdownResult;
+  task: TaskSnapshot;
+  task_event: TaskEvent;
+  task_write_command: TaskWriteCommand;
 }
 export interface CommandMeta {
   expected_revision?: ExpectedRevision;
   method: Method;
   operation_id: OperationId;
   scope_id: ScopeId;
+}
+export interface ContinueTaskCommand {
+  action: Action;
+  expected_revision: ExpectedRevision1;
+  input: Input;
+  operation_id: OperationId1;
+  scope_id?: ScopeId1;
+  task_id: TaskId;
+}
+export interface Input {
+  [k: string]: JsonValue;
+}
+export interface CreateTaskCommand {
+  agent_config_version_id?: AgentConfigVersionId;
+  input: Input1;
+  material_version_ids?: MaterialVersionIds;
+  operation_id: OperationId2;
+  task_type: TaskType;
+  workspace_id?: WorkspaceId;
+}
+export interface Input1 {
+  [k: string]: JsonValue;
 }
 export interface DraftResult {
   content_json: ContentJson;
@@ -94,7 +187,7 @@ export interface DraftResult {
   owner_type: OwnerType;
   revision: Revision;
   saved_at: SavedAt;
-  scope_id: ScopeId1;
+  scope_id: ScopeId2;
 }
 export interface ContentJson {
   [k: string]: JsonValue;
@@ -102,13 +195,33 @@ export interface ContentJson {
 export interface GetDraftCommand {
   owner_id: OwnerId1;
   owner_type: OwnerType1;
-  scope_id: ScopeId2;
+  scope_id: ScopeId3;
+}
+export interface GetOperationCommand {
+  operation_id: OperationId3;
+  scope_id?: ScopeId4;
+}
+export interface GetTaskCommand {
+  scope_id?: ScopeId5;
+  task_id: TaskId1;
 }
 export interface InitializeResult {
   capabilities: Capabilities;
   protocol_version?: ProtocolVersion;
   schema_version?: SchemaVersion;
   service_instance_id: ServiceInstanceId;
+}
+export interface ListEventsCommand {
+  after_seq?: AfterSeq;
+  limit?: Limit;
+  scope_id?: ScopeId6;
+  task_id: TaskId2;
+}
+export interface ListTasksCommand {
+  limit?: Limit1;
+  offset?: Offset;
+  scope_id?: ScopeId7;
+  status?: Status;
 }
 export interface ModelRequest {
   max_tokens?: MaxTokens;
@@ -132,7 +245,7 @@ export interface Usage {
 export interface PingResult {
   ok?: Ok;
   service_instance_id: ServiceInstanceId1;
-  status?: Status;
+  status?: Status1;
 }
 export interface RpcRequest {
   id?: Id;
@@ -163,11 +276,11 @@ export interface DomainErrorData {
 }
 export interface SaveDraftCommand {
   content_json: ContentJson1;
-  expected_revision?: ExpectedRevision1;
-  operation_id: OperationId1;
+  expected_revision?: ExpectedRevision2;
+  operation_id: OperationId4;
   owner_id: OwnerId2;
   owner_type: OwnerType2;
-  scope_id: ScopeId3;
+  scope_id: ScopeId8;
 }
 export interface ContentJson1 {
   [k: string]: JsonValue;
@@ -178,5 +291,50 @@ export interface SaveDraftResult {
   saved_at: SavedAt1;
 }
 export interface ShutdownResult {
-  status?: Status1;
+  status?: Status2;
+}
+export interface TaskSnapshot {
+  active_run_id: ActiveRunId;
+  agent_config_version_id: AgentConfigVersionId1;
+  checkpoint: Checkpoint;
+  created_at: CreatedAt;
+  input: Input2;
+  last_seq: LastSeq;
+  revision: Revision2;
+  scope: Scope;
+  status: Status3;
+  task_id: TaskId3;
+  task_type: TaskType1;
+  updated_at: UpdatedAt;
+  waiting_reason: WaitingReason;
+  workspace_id: WorkspaceId1;
+}
+export interface Checkpoint {
+  [k: string]: JsonValue;
+}
+export interface Input2 {
+  [k: string]: JsonValue;
+}
+export interface Scope {
+  [k: string]: JsonValue;
+}
+export interface TaskEvent {
+  created_at: CreatedAt1;
+  event_id: EventId;
+  payload: Payload;
+  run_id: RunId;
+  seq: Seq;
+  service_instance_id: ServiceInstanceId2;
+  task_id: TaskId4;
+  task_revision: TaskRevision;
+  type: Type;
+}
+export interface Payload {
+  [k: string]: JsonValue;
+}
+export interface TaskWriteCommand {
+  expected_revision: ExpectedRevision3;
+  operation_id: OperationId5;
+  scope_id?: ScopeId9;
+  task_id: TaskId5;
 }

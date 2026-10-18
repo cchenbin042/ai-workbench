@@ -37,7 +37,7 @@ def operation(**patch):
 
 
 async def test_open_migrates_and_enables_durable_settings(store):
-    assert store.schema_version == 1
+    assert store.schema_version == 2
     settings = await store.transaction(lambda conn: {
         "wal": conn.execute("PRAGMA journal_mode").fetchone()[0],
         "full": conn.execute("PRAGMA synchronous").fetchone()[0],
@@ -46,7 +46,7 @@ async def test_open_migrates_and_enables_durable_settings(store):
     })
     assert settings == {"wal": "wal", "full": 2, "fk": 1, "timeout": 5000}
     tables = {row["name"] for row in await store.read("SELECT name FROM sqlite_master WHERE type='table'")}
-    assert tables == {"schema_migrations", "operations", "drafts", "notes"}
+    assert tables == {"schema_migrations", "operations", "drafts", "notes", "tasks", "task_runs", "task_events"}
     assert (await store.read("PRAGMA integrity_check"))[0]["integrity_check"] == "ok"
 
 
@@ -181,14 +181,15 @@ async def test_migration_failure_preserves_backup(tmp_path, monkeypatch):
     migrations.mkdir()
     source = Path(storage_module.MIGRATIONS_DIR)
     (migrations / "0001_core.sql").write_bytes((source / "0001_core.sql").read_bytes())
-    (migrations / "0002_broken.sql").write_text("CREATE TABLE must_rollback(id TEXT);\nINVALID private-token;", encoding="utf-8")
+    (migrations / "0002_tasks.sql").write_bytes((source / "0002_tasks.sql").read_bytes())
+    (migrations / "0003_broken.sql").write_text("CREATE TABLE must_rollback(id TEXT);\nINVALID private-token;", encoding="utf-8")
     monkeypatch.setattr(storage_module, "MIGRATIONS_DIR", migrations)
     with pytest.raises(DomainError) as error:
         await Storage.open(path)
     assert error.value.code == "MIGRATION_FAILED"
     assert "private-token" not in str(error.value)
     with sqlite3.connect(path) as conn:
-        assert conn.execute("SELECT max(version) FROM schema_migrations").fetchone()[0] == 1
+        assert conn.execute("SELECT max(version) FROM schema_migrations").fetchone()[0] == 2
         assert conn.execute("SELECT name FROM sqlite_master WHERE name='must_rollback'").fetchone() is None
     backups = list((tmp_path / "backups").glob("migration-*/workbench.sqlite3"))
     assert len(backups) == 1
@@ -281,7 +282,8 @@ async def test_successful_upgrade_backs_up_wal_and_retains_five_snapshots(tmp_pa
     migrations = tmp_path / "migrations"
     migrations.mkdir()
     (migrations / "0001_core.sql").write_bytes((storage_module.MIGRATIONS_DIR / "0001_core.sql").read_bytes())
-    (migrations / "0002_next.sql").write_text("CREATE TABLE upgrade_probe(id TEXT PRIMARY KEY) STRICT;")
+    (migrations / "0002_tasks.sql").write_bytes((storage_module.MIGRATIONS_DIR / "0002_tasks.sql").read_bytes())
+    (migrations / "0003_next.sql").write_text("CREATE TABLE upgrade_probe(id TEXT PRIMARY KEY) STRICT;")
     monkeypatch.setattr(storage_module, "MIGRATIONS_DIR", migrations)
     with sqlite3.connect(path, isolation_level=None) as writer:
         writer.execute("PRAGMA journal_mode=WAL")
@@ -289,7 +291,7 @@ async def test_successful_upgrade_backs_up_wal_and_retains_five_snapshots(tmp_pa
         writer.execute("INSERT INTO notes(id,owner_type,owner_id,content_md) VALUES('n1','local','o1','wal content')")
         assert Path(str(path) + "-wal").stat().st_size > 0
         store = await Storage.open(path)
-        assert store.schema_version == 2
+        assert store.schema_version == 3
         await store.close()
     snapshots = sorted(backups.glob("migration-*"))
     assert len(snapshots) == 5
@@ -298,10 +300,10 @@ async def test_successful_upgrade_backs_up_wal_and_retains_five_snapshots(tmp_pa
     with sqlite3.connect(latest / "workbench.sqlite3") as conn:
         assert conn.execute("PRAGMA integrity_check").fetchone()[0] == "ok"
         assert conn.execute("SELECT content_md FROM notes").fetchone()[0] == "wal content"
-        assert conn.execute("SELECT max(version) FROM schema_migrations").fetchone()[0] == 1
+        assert conn.execute("SELECT max(version) FROM schema_migrations").fetchone()[0] == 2
     manifest = json.loads((latest / "manifest.json").read_text())
     from importlib.metadata import version
-    assert manifest["schema_version"] == 1
+    assert manifest["schema_version"] == 2
     assert manifest["app_version"] == version("zhixu-workbench")
     assert manifest["protocol_version"] == 1
     assert manifest["kind"] == "migration"
@@ -318,13 +320,14 @@ async def test_backup_cleanup_failure_does_not_reverse_successful_migration(tmp_
     migrations = tmp_path / "migrations"
     migrations.mkdir()
     (migrations / "0001_core.sql").write_bytes((storage_module.MIGRATIONS_DIR / "0001_core.sql").read_bytes())
-    (migrations / "0002_next.sql").write_text("CREATE TABLE upgrade_probe(id TEXT PRIMARY KEY) STRICT;")
+    (migrations / "0002_tasks.sql").write_bytes((storage_module.MIGRATIONS_DIR / "0002_tasks.sql").read_bytes())
+    (migrations / "0003_next.sql").write_text("CREATE TABLE upgrade_probe(id TEXT PRIMARY KEY) STRICT;")
     monkeypatch.setattr(storage_module, "MIGRATIONS_DIR", migrations)
     def fail_cleanup(self):
         raise OSError("private-token")
     monkeypatch.setattr(Storage, "_prune_backups", fail_cleanup)
     store = await Storage.open(path)
-    assert store.schema_version == 2
+    assert store.schema_version == 3
     assert await store.read("SELECT * FROM upgrade_probe") == []
     await store.close()
 
@@ -349,13 +352,13 @@ async def test_newer_database_refuses_downgrade_without_modifying_data(tmp_path)
     await save_draft(draft(), store)
     await store.close()
     with sqlite3.connect(path) as conn:
-        conn.execute("INSERT INTO schema_migrations(version,checksum,applied_at) VALUES(2,?,?)",
+        conn.execute("INSERT INTO schema_migrations(version,checksum,applied_at) VALUES(3,?,?)",
                      ("a" * 64, "2026-10-18T00:00:00+00:00"))
     with pytest.raises(DomainError) as error:
         await Storage.open(path)
     assert error.value.code == "MIGRATION_FAILED"
     with sqlite3.connect(path) as conn:
-        assert conn.execute("SELECT max(version) FROM schema_migrations").fetchone()[0] == 2
+        assert conn.execute("SELECT max(version) FROM schema_migrations").fetchone()[0] == 3
         assert conn.execute("SELECT count(*) FROM drafts").fetchone()[0] == 1
 
 

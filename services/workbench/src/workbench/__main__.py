@@ -10,10 +10,13 @@ import sys
 import threading
 import uuid
 
-from workbench.contracts import DomainError, InitializeResult, PingResult, ShutdownResult
+from workbench.contracts import (ContinueTaskCommand, DomainError, GetTaskCommand,
+                                 InitializeResult, ListEventsCommand, PingResult,
+                                 ShutdownResult, TaskWriteCommand)
 from workbench.rpc import JsonLineDecoder, RpcRouter, encode_frame, error_response, run_sync
 
-from workbench.storage import Storage, get_draft, save_draft
+from workbench.storage import Storage, get_draft, save_draft, validate_command
+from workbench.tasks import TaskService
 
 logger = logging.getLogger("workbench")
 
@@ -48,7 +51,19 @@ async def run_service(store: Storage) -> None:
     decoder = JsonLineDecoder()
     instance_id = str(uuid.uuid4())
     shutdown_requested = False
-    methods = ["system.initialize", "system.ping", "system.shutdown", "drafts.save", "drafts.get"]
+    methods = ["system.initialize", "system.ping", "system.shutdown", "drafts.save", "drafts.get",
+               "tasks.get", "tasks.list", "tasks.cancel", "tasks.resume", "tasks.continue",
+               "events.list", "operations.get"]
+    tasks = TaskService(store, instance_id=instance_id)
+    await tasks.recover_startup()
+
+    def publish(event):
+        try:
+            outgoing.put_nowait({"jsonrpc": "2.0", "method": "task.event", "params": event})
+        except asyncio.QueueFull:
+            logger.warning("Task event delivery deferred")
+    tasks.on_event = publish
+    tasks.start_worker()
 
     async def initialize():
         return InitializeResult(schema_version=store.schema_version, service_instance_id=instance_id, capabilities=methods).model_dump()
@@ -67,6 +82,40 @@ async def run_service(store: Storage) -> None:
     async def drafts_get(**command):
         return await get_draft(command, store)
 
+    async def tasks_get(**command):
+        parsed = validate_command(GetTaskCommand, command)
+        return await tasks.get(parsed.task_id)
+
+    async def tasks_list(**command):
+        return await tasks.list(**command)
+
+    async def tasks_cancel(**command):
+        parsed = validate_command(TaskWriteCommand, command)
+        return await tasks.cancel(parsed.task_id, operation_id=parsed.operation_id, expected_revision=parsed.expected_revision)
+
+    async def tasks_resume(**command):
+        parsed = validate_command(TaskWriteCommand, command)
+        return await tasks.resume(parsed.task_id, operation_id=parsed.operation_id, expected_revision=parsed.expected_revision)
+
+    async def tasks_continue(**command):
+        parsed = validate_command(ContinueTaskCommand, command)
+        return await tasks.continue_task(parsed.task_id, action=parsed.action, input=parsed.input,
+                                          operation_id=parsed.operation_id, expected_revision=parsed.expected_revision)
+
+    async def events_list(**command):
+        parsed = validate_command(ListEventsCommand, command)
+        return await tasks.list_events(parsed.task_id, parsed.after_seq, parsed.limit)
+
+    async def operations_get(**command):
+        return await tasks.get_operation(**command)
+
+    router.register("tasks.get", tasks_get)
+    router.register("tasks.list", tasks_list)
+    router.register("tasks.cancel", tasks_cancel)
+    router.register("tasks.resume", tasks_resume)
+    router.register("tasks.continue", tasks_continue)
+    router.register("events.list", events_list)
+    router.register("operations.get", operations_get)
     router.register("drafts.save", drafts_save)
     router.register("drafts.get", drafts_get)
     router.register("system.initialize", initialize)
@@ -186,6 +235,7 @@ async def run_service(store: Storage) -> None:
         for task in active:
             task.cancel()
         await asyncio.gather(*active, return_exceptions=True)
+        await tasks.close()
         try:
             async with asyncio.timeout(2):
                 await outgoing.join()

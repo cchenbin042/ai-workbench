@@ -136,7 +136,108 @@ class DraftResult(SaveDraftResult):
     content_json: dict[str, JsonValue]
 
 
+TaskStatus = Literal["draft", "queued", "running", "waiting_user", "cancelling",
+                     "completed", "failed", "interrupted", "cancelled"]
+WaitingReason = Literal["review_candidates", "answer_question", "verify_transcript",
+                        "approve_tool", "review_artifact"]
+TaskType = Literal["generic", "question_generation", "interview"]
+ShortId = Annotated[str, Field(min_length=1, max_length=128)]
+
+
+class CreateTaskCommand(Contract):
+    operation_id: ShortId
+    task_type: TaskType
+    workspace_id: None = None
+    agent_config_version_id: None = None
+    material_version_ids: Annotated[list[str], Field(max_length=0)] = Field(default_factory=list)
+    input: dict[str, JsonValue]
+
+    @field_validator("input")
+    @classmethod
+    def bounded_input(cls, value):
+        return SaveDraftCommand.bounded_content(value)
+
+
+class GetTaskCommand(Contract):
+    task_id: ShortId
+    scope_id: Literal["local"] = "local"
+
+
+class ChangeTaskCommand(GetTaskCommand):
+    operation_id: ShortId
+    expected_revision: NonNegativeInt | None = None
+
+
+class TaskWriteCommand(ChangeTaskCommand):
+    expected_revision: NonNegativeInt
+
+
+class ContinueTaskCommand(TaskWriteCommand):
+    action: WaitingReason
+    input: dict[str, JsonValue]
+
+    @field_validator("input")
+    @classmethod
+    def bounded_input(cls, value):
+        return SaveDraftCommand.bounded_content(value)
+
+
+class ListTasksCommand(Contract):
+    scope_id: Literal["local"] = "local"
+    status: TaskStatus | None = None
+    limit: Annotated[StrictInt, Field(ge=1, le=200)] = 50
+    offset: NonNegativeInt = 0
+
+
+class ListEventsCommand(GetTaskCommand):
+    after_seq: NonNegativeInt = 0
+    limit: Annotated[StrictInt, Field(ge=1, le=200)] = 50
+
+
+class GetOperationCommand(Contract):
+    operation_id: ShortId
+    scope_id: Literal["local"] = "local"
+
+
+class TaskSnapshot(Contract):
+    task_id: ShortId
+    task_type: TaskType
+    workspace_id: None
+    agent_config_version_id: None
+    input: dict[str, JsonValue]
+    scope: dict[str, JsonValue]
+    checkpoint: dict[str, JsonValue]
+    status: TaskStatus
+    waiting_reason: WaitingReason | None
+    active_run_id: ShortId | None
+    revision: Annotated[StrictInt, Field(gt=0)]
+    last_seq: NonNegativeInt
+    created_at: NonEmptyStr
+    updated_at: NonEmptyStr
+
+
+class TaskEvent(Contract):
+    event_id: ShortId
+    task_id: ShortId
+    seq: Annotated[StrictInt, Field(gt=0)]
+    run_id: ShortId | None
+    service_instance_id: ShortId
+    task_revision: Annotated[StrictInt, Field(gt=0)]
+    type: NonEmptyStr
+    payload: dict[str, JsonValue]
+    created_at: NonEmptyStr
+
+
 class WorkbenchRpcContract(Contract):
+    create_task_command: CreateTaskCommand
+    get_task_command: GetTaskCommand
+    task_write_command: TaskWriteCommand
+    continue_task_command: ContinueTaskCommand
+    list_tasks_command: ListTasksCommand
+    list_events_command: ListEventsCommand
+    get_operation_command: GetOperationCommand
+    task: TaskSnapshot
+    task_event: TaskEvent
     save_draft_command: SaveDraftCommand
     get_draft_command: GetDraftCommand
     save_draft_result: SaveDraftResult

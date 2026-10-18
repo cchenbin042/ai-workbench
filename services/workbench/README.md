@@ -1,6 +1,6 @@
 # 知序本地后端
 
-Python 3.14 + Pydantic 2 的本地 stdio JSON-RPC 服务，供 Electron 主进程启动。当前提供协议、严格契约、生命周期、SQLite 持久化及本地草稿保存/读取；资料、模型、语音和 MCP 业务按后续计划开发。
+Python 3.14 + Pydantic 2 的本地 stdio JSON-RPC 服务，供 Electron 主进程启动。当前提供协议、严格契约、生命周期、SQLite 持久化、本地草稿保存/读取及任务协调器；资料、模型、语音和 MCP 业务按后续计划开发。
 
 ## 安装和检查
 
@@ -31,7 +31,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify-backend.ps1
 {"jsonrpc":"2.0","id":"stop-1","method":"system.shutdown","params":{}}
 ```
 
-- initialize 返回 `protocol_version=1`、`schema_version=1`（读取实际迁移版本）、每进程固定 UUID `service_instance_id` 及系统/草稿方法的 capabilities。
+- initialize 返回 `protocol_version=1`、`schema_version=2`（读取实际迁移版本）、每进程固定 UUID `service_instance_id` 及系统/草稿方法的 capabilities。
 - ping 返回 `ok=true`、`status=ok` 及同一个服务实例 ID，兼容现有桌面客户端。
 - shutdown 先返回 `status=shutting_down`，再退出；不需要父进程关闭 stdin。无 id 的合法 notification 不响应，shutdown notification 仍会停止服务。
 - EOF 排空已接收的普通请求；最多等待 5 秒，随后取消未完成任务。主动 shutdown 取消其余请求，最多等待 2 秒排空写队列。同步处理器不能被 Python 强行中断，使用有界守护线程避免阻塞进程退出；数据库另有专用单写线程；已接受的写事务不随 RPC 取消而取消，关闭连接前排空这些写事务。若 ACK 丢失，使用原 operation_id 和原参数重试以取得已提交结果。
@@ -42,7 +42,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify-backend.ps1
 
 ## SQLite 与草稿接口
 
-SQLite 使用单写线程、WAL、synchronous=FULL、foreign_keys=ON、busy_timeout=5000 ms；查询使用短生命周期只读连接。当前表只有 schema_migrations、operations、drafts、notes，不预建未来业务空表。notes 尚未提供业务 RPC。
+SQLite 使用单写线程、WAL、synchronous=FULL、foreign_keys=ON、busy_timeout=5000 ms；查询使用短生命周期只读连接。当前表为 schema_migrations、operations、drafts、notes、tasks、task_runs、task_events，不预建后续业务空表。notes 尚未提供业务 RPC。
 
 草稿暂仅支持 `scope_id=local`、`owner_type=local` 的本地编辑器，以 owner_id 区分草稿。工作区/任务 owner 在具备真实归属校验后再开放；当前桌面 preload 白名单尚未接入草稿方法，前端持久化联调留给后续任务。
 
@@ -63,6 +63,27 @@ SQLite 使用单写线程、WAL、synchronous=FULL、foreign_keys=ON、busy_time
 迁移 SQL 随 Python 包安装，行尾固定为 LF；已应用文件的内容不可修改，变更必须新增顺序版本。升级前使用 SQLite backup API 产生包含已提交 WAL 页的一致快照并验证 integrity；清单记录 schema/app/protocol 版本、SHA256 和范围。当前迁移快照不包含附件，不是完整离机备份。失败时停止启动并保留备份；不匹配的 checksum 或比应用更新的 schema 也会拒绝启动。
 
 成功迁移后默认保留最近 5 份完整 migration-* 快照，不清理手动备份；清理失败只记录脱敏告警，不把已提交迁移误报失败。手动恢复界面和完整备份包仍属后续任务。
+
+## 任务协调器与恢复
+
+当前 `TaskService` 提供单 FIFO 主动执行槽。执行流程通过服务端 `handlers` 注册，排队先落库再返回；取得槽时新建 run，完整业务结果只经 `commit_run` 提交。进入 waiting_user 或终态后释放槽；用户输入与 scope 快照保持不变，继续动作保存在检查点。
+
+stdio 公开 `tasks.get/list/cancel/resume/continue`、`events.list` 和 `operations.get`。本阶段没有注册真实 Agent，`tasks.create` 暂不公开；测试受控流程由 Python 内部创建，workspace/agent 引用仅接受 null、材料选择为空，避免虚构实体归属。前端 preload 白名单和任务页尚未接入这些方法，不能把后端通过视为 UI 已可创建任务。
+
+只读查询示例：
+
+```json
+{"jsonrpc":"2.0","id":"tasks-1","method":"tasks.list","params":{"scope_id":"local","limit":50,"offset":0}}
+{"jsonrpc":"2.0","id":"task-1","method":"tasks.get","params":{"task_id":"replace-with-existing-task-id","scope_id":"local"}}
+{"jsonrpc":"2.0","id":"events-1","method":"events.list","params":{"task_id":"replace-with-existing-task-id","after_seq":0,"limit":50}}
+```
+
+- 写入取消、恢复、继续均要求 operation_id 与 expected_revision，严格拒绝 bool revision 和额外字段；同操作重放先于当前 revision 校验。缺失任务返回 TASK_NOT_FOUND，非法状态为 INVALID_TASK_STATE，不支持流程为 FLOW_UNAVAILABLE。
+- 取消先在事务中撤销 active_run_id 并记录 cancel_requested，再取消本地 handler。未停止时仍占槽；停止后进入 cancelled。取消后的结果写入返回 STALE_RUN；已先提交的结果保留。旧取消操作的重放不会取消恢复后的新 run。远端调用是否停止由真实 provider/tool 接入后报告，不保证远端副作用回滚。
+- 快照含 last_seq；持久事件带 event_id/task_id/seq/run_id/service_instance_id/task_revision/type/payload。业务、状态和事件在一个事务内提交，提交后才发 task.event 通知。推送拥塞或断连时通过 events.list(after_seq) 补齐，客户端按 seq 去重、忽略旧实例实时通知；历史事件保留原实例标识。
+- events.list 与 tasks.list 默认 50、最多 200；客户端按最后 seq 或 offset 获取下一页。事件不携带材料或任务输入正文。
+- 启动先把旧 queued/running/cancelling 转成 interrupted，waiting_user/检查点和终态保持；服务退出也撤销未结束执行。旧 queued 不自动重发，用户显式 resume 才重新排队，且流程必须已注册；continue 只接受当前 waiting_reason 对应 action。
+- 数据库锁定或满盘时，协调器只退避重试本地原子获取槽/收尾，不重新发起 provider 调用。失败信息脱敏，已提交事件和 operation 可查询。RPC 等待者断开不会取消已接受的本地命令。
 
 ## 公共契约
 

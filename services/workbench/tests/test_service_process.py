@@ -42,7 +42,7 @@ def test_initialize_ping_shutdown_with_stdin_still_open(service):
     process, responses = service()
     send(process,"system.initialize")
     result = responses.get(timeout=4)["result"]
-    assert result["protocol_version"] == 1 and result["schema_version"] == 1
+    assert result["protocol_version"] == 1 and result["schema_version"] == 2
     uuid.UUID(result["service_instance_id"])
     assert "system.shutdown" in result["capabilities"]
     send(process,"system.initialize",id=2)
@@ -236,3 +236,72 @@ def test_corrupt_database_startup_never_emits_protocol_or_private_data(tmp_path)
     assert process.returncode != 0
     assert process.stdout == b""
     assert process.stderr and b"private-token" not in process.stderr
+
+
+def test_task_reads_are_public_but_placeholder_execution_is_not(service):
+    process, responses = service()
+    send(process, "tasks.list")
+    assert responses.get(timeout=4)["result"] == []
+    send(process, "tasks.create", id=2, params={"operation_id": "o1", "task_type": "generic", "input": {}})
+    assert responses.get(timeout=3)["error"]["code"] == -32601
+    send(process, "tasks.get", id=3, params={"task_id": "missing"})
+    assert responses.get(timeout=3)["error"]["data"]["code"] == "TASK_NOT_FOUND"
+    send(process, "tasks.cancel", id=4, params={"task_id": "missing", "operation_id": "o1", "expected_revision": True})
+    assert responses.get(timeout=3)["error"]["code"] == -32602
+    send(process, "events.list", id=5, params={"task_id": "missing", "after_seq": -1})
+    assert responses.get(timeout=3)["error"]["code"] == -32602
+    send(process, "system.shutdown", id=6)
+    assert responses.get(timeout=3)["id"] == 6
+    assert process.wait(timeout=3) == 0
+
+
+def test_real_process_startup_recovers_tasks_without_replaying_work(service, tmp_path):
+    import asyncio
+    from workbench.storage import Storage
+    from workbench.tasks import TaskService
+    from test_tasks import command, no_flow
+    async def seed():
+        store = await Storage.open(tmp_path / "data space" / "data" / "workbench.sqlite3")
+        tasks = TaskService(store, handlers={"generic": no_flow})
+        waiting = await tasks.create(command())
+        run = await tasks.start(waiting["task_id"])
+        await tasks.commit_run(waiting["task_id"], run, lambda conn: {}, status="waiting_user",
+                               waiting_reason="review_artifact", checkpoint={"artifact_id": "a1"})
+        running = await tasks.create(command())
+        await tasks.start(running["task_id"])
+        queued = await tasks.create(command())
+        await store.close()
+        return waiting, running, queued
+    waiting, running, queued = asyncio.run(seed())
+    process, responses = service()
+    send(process, "system.initialize")
+    first_instance = responses.get(timeout=4)["result"]["service_instance_id"]
+    send(process, "tasks.get", id=2, params={"task_id": waiting["task_id"]})
+    snapshot = responses.get(timeout=3)["result"]
+    assert snapshot["status"] == "waiting_user"
+    assert snapshot["checkpoint"] == {"artifact_id": "a1"}
+    for index, task in enumerate([running, queued], 3):
+        send(process, "tasks.get", id=index, params={"task_id": task["task_id"]})
+        assert responses.get(timeout=3)["result"]["status"] == "interrupted"
+    send(process, "events.list", id=5, params={"task_id": running["task_id"], "after_seq": 2})
+    event = responses.get(timeout=3)["result"][0]
+    assert event["seq"] == 3 and event["payload"]["status"] == "interrupted"
+    assert event["service_instance_id"] == first_instance
+    send(process, "tasks.resume", id=6, params={"task_id": running["task_id"], "operation_id": str(uuid.uuid4()), "expected_revision": 3})
+    assert responses.get(timeout=3)["error"]["data"]["code"] == "FLOW_UNAVAILABLE"
+    # Kill the actual service, then verify a second instance keeps the snapshot.
+    process.kill()
+    assert process.wait(timeout=3) != 0
+    process, responses = service()
+    send(process, "system.initialize")
+    second_instance = responses.get(timeout=4)["result"]["service_instance_id"]
+    assert second_instance != first_instance
+    send(process, "tasks.get", id=2, params={"task_id": running["task_id"]})
+    assert responses.get(timeout=3)["result"]["status"] == "interrupted"
+    send(process, "events.list", id=3, params={"task_id": running["task_id"], "after_seq": 2})
+    historical = responses.get(timeout=3)["result"]
+    assert [event["seq"] for event in historical] == [3]
+    assert historical[0]["service_instance_id"] == first_instance
+    send(process, "system.shutdown", id=4)
+    assert responses.get(timeout=3)["id"] == 4
+    assert process.wait(timeout=3) == 0

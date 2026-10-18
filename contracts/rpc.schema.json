@@ -40,6 +40,113 @@
       "title": "CommandMeta",
       "type": "object"
     },
+    "ContinueTaskCommand": {
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "enum": [
+            "review_candidates",
+            "answer_question",
+            "verify_transcript",
+            "approve_tool",
+            "review_artifact"
+          ],
+          "title": "Action",
+          "type": "string"
+        },
+        "expected_revision": {
+          "minimum": 0,
+          "title": "Expected Revision",
+          "type": "integer"
+        },
+        "input": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Input",
+          "type": "object"
+        },
+        "operation_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Operation Id",
+          "type": "string"
+        },
+        "scope_id": {
+          "const": "local",
+          "default": "local",
+          "title": "Scope Id",
+          "type": "string"
+        },
+        "task_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Task Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "task_id",
+        "operation_id",
+        "expected_revision",
+        "action",
+        "input"
+      ],
+      "title": "ContinueTaskCommand",
+      "type": "object"
+    },
+    "CreateTaskCommand": {
+      "additionalProperties": false,
+      "properties": {
+        "agent_config_version_id": {
+          "default": null,
+          "title": "Agent Config Version Id",
+          "type": "null"
+        },
+        "input": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Input",
+          "type": "object"
+        },
+        "material_version_ids": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 0,
+          "title": "Material Version Ids",
+          "type": "array"
+        },
+        "operation_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Operation Id",
+          "type": "string"
+        },
+        "task_type": {
+          "enum": [
+            "generic",
+            "question_generation",
+            "interview"
+          ],
+          "title": "Task Type",
+          "type": "string"
+        },
+        "workspace_id": {
+          "default": null,
+          "title": "Workspace Id",
+          "type": "null"
+        }
+      },
+      "required": [
+        "operation_id",
+        "task_type",
+        "input"
+      ],
+      "title": "CreateTaskCommand",
+      "type": "object"
+    },
     "DomainErrorData": {
       "additionalProperties": false,
       "properties": {
@@ -152,6 +259,50 @@
       "title": "GetDraftCommand",
       "type": "object"
     },
+    "GetOperationCommand": {
+      "additionalProperties": false,
+      "properties": {
+        "operation_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Operation Id",
+          "type": "string"
+        },
+        "scope_id": {
+          "const": "local",
+          "default": "local",
+          "title": "Scope Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "operation_id"
+      ],
+      "title": "GetOperationCommand",
+      "type": "object"
+    },
+    "GetTaskCommand": {
+      "additionalProperties": false,
+      "properties": {
+        "scope_id": {
+          "const": "local",
+          "default": "local",
+          "title": "Scope Id",
+          "type": "string"
+        },
+        "task_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Task Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "task_id"
+      ],
+      "title": "GetTaskCommand",
+      "type": "object"
+    },
     "InitializeResult": {
       "additionalProperties": false,
       "properties": {
@@ -188,6 +339,90 @@
       "type": "object"
     },
     "JsonValue": {},
+    "ListEventsCommand": {
+      "additionalProperties": false,
+      "properties": {
+        "after_seq": {
+          "default": 0,
+          "minimum": 0,
+          "title": "After Seq",
+          "type": "integer"
+        },
+        "limit": {
+          "default": 50,
+          "maximum": 200,
+          "minimum": 1,
+          "title": "Limit",
+          "type": "integer"
+        },
+        "scope_id": {
+          "const": "local",
+          "default": "local",
+          "title": "Scope Id",
+          "type": "string"
+        },
+        "task_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Task Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "task_id"
+      ],
+      "title": "ListEventsCommand",
+      "type": "object"
+    },
+    "ListTasksCommand": {
+      "additionalProperties": false,
+      "properties": {
+        "limit": {
+          "default": 50,
+          "maximum": 200,
+          "minimum": 1,
+          "title": "Limit",
+          "type": "integer"
+        },
+        "offset": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Offset",
+          "type": "integer"
+        },
+        "scope_id": {
+          "const": "local",
+          "default": "local",
+          "title": "Scope Id",
+          "type": "string"
+        },
+        "status": {
+          "anyOf": [
+            {
+              "enum": [
+                "draft",
+                "queued",
+                "running",
+                "waiting_user",
+                "cancelling",
+                "completed",
+                "failed",
+                "interrupted",
+                "cancelled"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Status"
+        }
+      },
+      "title": "ListTasksCommand",
+      "type": "object"
+    },
     "ModelMessage": {
       "additionalProperties": false,
       "properties": {
@@ -576,6 +811,250 @@
       },
       "title": "ShutdownResult",
       "type": "object"
+    },
+    "TaskEvent": {
+      "additionalProperties": false,
+      "properties": {
+        "created_at": {
+          "minLength": 1,
+          "title": "Created At",
+          "type": "string"
+        },
+        "event_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Event Id",
+          "type": "string"
+        },
+        "payload": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Payload",
+          "type": "object"
+        },
+        "run_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Run Id"
+        },
+        "seq": {
+          "exclusiveMinimum": 0,
+          "title": "Seq",
+          "type": "integer"
+        },
+        "service_instance_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Service Instance Id",
+          "type": "string"
+        },
+        "task_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Task Id",
+          "type": "string"
+        },
+        "task_revision": {
+          "exclusiveMinimum": 0,
+          "title": "Task Revision",
+          "type": "integer"
+        },
+        "type": {
+          "minLength": 1,
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "event_id",
+        "task_id",
+        "seq",
+        "run_id",
+        "service_instance_id",
+        "task_revision",
+        "type",
+        "payload",
+        "created_at"
+      ],
+      "title": "TaskEvent",
+      "type": "object"
+    },
+    "TaskSnapshot": {
+      "additionalProperties": false,
+      "properties": {
+        "active_run_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Active Run Id"
+        },
+        "agent_config_version_id": {
+          "title": "Agent Config Version Id",
+          "type": "null"
+        },
+        "checkpoint": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Checkpoint",
+          "type": "object"
+        },
+        "created_at": {
+          "minLength": 1,
+          "title": "Created At",
+          "type": "string"
+        },
+        "input": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Input",
+          "type": "object"
+        },
+        "last_seq": {
+          "minimum": 0,
+          "title": "Last Seq",
+          "type": "integer"
+        },
+        "revision": {
+          "exclusiveMinimum": 0,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "scope": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Scope",
+          "type": "object"
+        },
+        "status": {
+          "enum": [
+            "draft",
+            "queued",
+            "running",
+            "waiting_user",
+            "cancelling",
+            "completed",
+            "failed",
+            "interrupted",
+            "cancelled"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "task_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Task Id",
+          "type": "string"
+        },
+        "task_type": {
+          "enum": [
+            "generic",
+            "question_generation",
+            "interview"
+          ],
+          "title": "Task Type",
+          "type": "string"
+        },
+        "updated_at": {
+          "minLength": 1,
+          "title": "Updated At",
+          "type": "string"
+        },
+        "waiting_reason": {
+          "anyOf": [
+            {
+              "enum": [
+                "review_candidates",
+                "answer_question",
+                "verify_transcript",
+                "approve_tool",
+                "review_artifact"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Waiting Reason"
+        },
+        "workspace_id": {
+          "title": "Workspace Id",
+          "type": "null"
+        }
+      },
+      "required": [
+        "task_id",
+        "task_type",
+        "workspace_id",
+        "agent_config_version_id",
+        "input",
+        "scope",
+        "checkpoint",
+        "status",
+        "waiting_reason",
+        "active_run_id",
+        "revision",
+        "last_seq",
+        "created_at",
+        "updated_at"
+      ],
+      "title": "TaskSnapshot",
+      "type": "object"
+    },
+    "TaskWriteCommand": {
+      "additionalProperties": false,
+      "properties": {
+        "expected_revision": {
+          "minimum": 0,
+          "title": "Expected Revision",
+          "type": "integer"
+        },
+        "operation_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Operation Id",
+          "type": "string"
+        },
+        "scope_id": {
+          "const": "local",
+          "default": "local",
+          "title": "Scope Id",
+          "type": "string"
+        },
+        "task_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Task Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "task_id",
+        "operation_id",
+        "expected_revision"
+      ],
+      "title": "TaskWriteCommand",
+      "type": "object"
     }
   },
   "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -584,14 +1063,32 @@
     "command_meta": {
       "$ref": "#/$defs/CommandMeta"
     },
+    "continue_task_command": {
+      "$ref": "#/$defs/ContinueTaskCommand"
+    },
+    "create_task_command": {
+      "$ref": "#/$defs/CreateTaskCommand"
+    },
     "draft": {
       "$ref": "#/$defs/DraftResult"
     },
     "get_draft_command": {
       "$ref": "#/$defs/GetDraftCommand"
     },
+    "get_operation_command": {
+      "$ref": "#/$defs/GetOperationCommand"
+    },
+    "get_task_command": {
+      "$ref": "#/$defs/GetTaskCommand"
+    },
     "initialize": {
       "$ref": "#/$defs/InitializeResult"
+    },
+    "list_events_command": {
+      "$ref": "#/$defs/ListEventsCommand"
+    },
+    "list_tasks_command": {
+      "$ref": "#/$defs/ListTasksCommand"
     },
     "model_request": {
       "$ref": "#/$defs/ModelRequest"
@@ -624,9 +1121,27 @@
     },
     "shutdown": {
       "$ref": "#/$defs/ShutdownResult"
+    },
+    "task": {
+      "$ref": "#/$defs/TaskSnapshot"
+    },
+    "task_event": {
+      "$ref": "#/$defs/TaskEvent"
+    },
+    "task_write_command": {
+      "$ref": "#/$defs/TaskWriteCommand"
     }
   },
   "required": [
+    "create_task_command",
+    "get_task_command",
+    "task_write_command",
+    "continue_task_command",
+    "list_tasks_command",
+    "list_events_command",
+    "get_operation_command",
+    "task",
+    "task_event",
     "save_draft_command",
     "get_draft_command",
     "save_draft_result",
