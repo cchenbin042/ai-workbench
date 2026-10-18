@@ -44,7 +44,7 @@
 |---|---|---|---|---|---|
 | T001 | 桌面脚手架（前端部分） | 开发任务 / M1 | 已完成 | 2026-10-18 | [T001-2026-10-18-desktop-scaffold.md](tasks/T001-2026-10-18-desktop-scaffold.md) |
 | T002 | 后端脚手架 | 开发任务 / M1 | 已完成 | 2026-10-18 | [T002-2026-10-18-backend-scaffold.md](tasks/T002-2026-10-18-backend-scaffold.md) |
-| T003 | SQLite、幂等写与迁移备份 | 后端开发 / M1 Task 02 | 进行中 | 2026-10-18 | [T003-2026-10-18-backend-storage.md](tasks/T003-2026-10-18-backend-storage.md) |
+| T003 | SQLite、幂等写与迁移备份 | 后端开发 / M1 Task 02 | 进行中 | 2026-10-18 | `codex/backend-storage` 分支，尚未合并到本分支 |
 | T004 | 共用导航与首页壳（前端部分） | 开发任务 / M1 | 已完成 | 2026-10-18 | [T004-2026-10-18-shared-navigation-shell.md](tasks/T004-2026-10-18-shared-navigation-shell.md) |
 
 当前焦点：T003 后端存储进行中；T004 已完成共用导航/首页壳，新增 `@nav` 5/5，全量前端 14/14。业务页面仍需等待 M1 Task 02～04 的 RPC 与数据契约；服务打包仍是 M1 门禁缺口。
@@ -67,4 +67,4 @@
 
 | 日期 | 当日涉及任务 | 产出与主线结论 | 遗留与下一步 |
 |---|---|---|---|
-| 2026-10-18 | [T001](tasks/T001-2026-10-18-desktop-scaffold.md)、[T002](tasks/T002-2026-10-18-backend-scaffold.md)、[T003](tasks/T003-2026-10-18-backend-storage.md)、[T004](tasks/T004-2026-10-18-shared-navigation-shell.md) | 桌面脚手架完成：TypeScript 检查通过、Windows 桌面包构建通过、全量前端 Playwright 14/14；后端脚手架完成：57/57 pytest、哈希安装与含空格干净环境验证通过，两项审查问题已修复，契约类型检查通过；T003 后端存储进行中（细节见其明细）；T004 共用导航与首页壳完成：侧栏、路由、空态、草稿/模块保持与焦点管理，新增 `@nav` 5/5；M1 业务流未开始 | 继续 T003；下一任务：M1 服务打包与安装验收（PyInstaller、安装包握手）；业务页面等待 M1 Task 02～04 的 RPC |
+| 2026-10-18 | [T001](tasks/T001-2026-10-18-desktop-scaffold.md)、[T002](tasks/T002-2026-10-18-backend-scaffold.md)、T003（后端分支）、[T004](tasks/T004-2026-10-18-shared-navigation-shell.md) | 桌面脚手架完成：TypeScript 检查通过、Windows 桌面包构建通过、全量前端 Playwright 14/14；后端脚手架完成：57/57 pytest、哈希安装与含空格干净环境验证通过，两项审查问题已修复，契约类型检查通过；T003 后端存储进行中（明细在 `codex/backend-storage` 分支）；T004 共用导航与首页壳完成：侧栏、路由、空态、草稿/模块保持与焦点管理，新增 `@nav` 5/5；M1 业务流未开始 | 继续 T003；下一任务：M1 服务打包与安装验收（PyInstaller、安装包握手）；业务页面等待 M1 Task 02～04 的 RPC |
