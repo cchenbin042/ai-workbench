@@ -20,10 +20,11 @@ interface StatusPanelProps {
 }
 
 export function StatusPanel({ connection }: StatusPanelProps) {
-  const { status, initialize, latencyMs, error, refreshing, refresh } = connection;
+  const { status, latencyMs, error, refreshing, refresh, reconnect } = connection;
   const runtime = typeof window !== 'undefined' ? window.workbench?.runtime : undefined;
-  const instance = status.serviceInstanceId ?? initialize?.service_instance_id ?? '—';
-  const capabilities = status.capabilities ?? initialize?.capabilities ?? [];
+  const instance = status.serviceInstanceId ?? '—';
+  const capabilities = status.capabilities ?? [];
+  const canReconnect = status.state === 'disconnected' || status.state === 'stopped';
 
   return (
     <aside className="status-panel" aria-label="本地服务状态">
@@ -32,7 +33,11 @@ export function StatusPanel({ connection }: StatusPanelProps) {
           <span className="eyebrow">LOCAL SERVICE</span>
           <h2>本地服务</h2>
         </div>
-        <span className={`status-badge ${status.state}`} data-testid="service-status">
+        <span
+          className={`status-badge ${status.state}`}
+          data-testid="service-status"
+          aria-live="polite"
+        >
           <span className="status-dot" />
           {stateLabels[status.state]}
         </span>
@@ -41,15 +46,11 @@ export function StatusPanel({ connection }: StatusPanelProps) {
       <dl className="status-list">
         <div>
           <dt>协议版本</dt>
-          <dd data-testid="service-protocol">
-            {status.protocolVersion ?? initialize?.protocol_version ?? '—'}
-          </dd>
+          <dd data-testid="service-protocol">{status.protocolVersion ?? '—'}</dd>
         </div>
         <div>
           <dt>数据版本</dt>
-          <dd data-testid="service-schema">
-            {status.schemaVersion ?? initialize?.schema_version ?? '—'}
-          </dd>
+          <dd data-testid="service-schema">{status.schemaVersion ?? '—'}</dd>
         </div>
         <div>
           <dt>服务实例</dt>
@@ -89,12 +90,12 @@ export function StatusPanel({ connection }: StatusPanelProps) {
       <button
         type="button"
         className="refresh-button"
-        onClick={() => void refresh()}
+        onClick={() => void (canReconnect ? reconnect() : refresh())}
         disabled={refreshing}
         data-testid="refresh-connection"
       >
         <Icon name="refresh" size={16} />
-        {refreshing ? '正在重试…' : '重新连接'}
+        {refreshing ? '正在重试…' : canReconnect ? '重新连接' : '刷新状态'}
       </button>
 
       <div className="status-section runtime">

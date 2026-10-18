@@ -3,10 +3,13 @@ import path from 'node:path';
 
 import { app, BrowserWindow, protocol, session } from 'electron';
 
+import { originOf } from '../shared/ipc-policy';
 import { registerBridge } from './bridge';
 import { WorkbenchService, type ServiceOptions } from './service-process';
 
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined;
+
+app.setName('ZhixuWorkbench');
 
 const APP_SCHEME = 'app';
 const APP_HOST = 'workbench';
@@ -79,11 +82,8 @@ function trustedOrigins(): string[] {
 }
 
 function isTrustedUrl(target: string): boolean {
-  try {
-    return trustedOrigins().includes(new URL(target).origin);
-  } catch {
-    return false;
-  }
+  const origin = originOf(target);
+  return origin !== null && trustedOrigins().includes(origin);
 }
 
 async function serveRendererFile(request: Request): Promise<Response> {
@@ -92,7 +92,12 @@ async function serveRendererFile(request: Request): Promise<Response> {
     return new Response('Not Found', { status: 404 });
   }
 
-  const requestedPath = decodeURIComponent(url.pathname === '/' ? '/index.html' : url.pathname);
+  let requestedPath: string;
+  try {
+    requestedPath = decodeURIComponent(url.pathname === '/' ? '/index.html' : url.pathname);
+  } catch {
+    return new Response('Bad Request', { status: 400 });
+  }
   const filePath = path.normalize(path.join(RENDERER_DIR, requestedPath));
   const relative = path.relative(RENDERER_DIR, filePath);
   if (relative.startsWith('..') || path.isAbsolute(relative)) {
@@ -121,7 +126,7 @@ function applySessionSecurity(): void {
 
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
     session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
-      if (!details.url.startsWith(MAIN_WINDOW_VITE_DEV_SERVER_URL)) {
+      if (!isTrustedUrl(details.url)) {
         callback({ responseHeaders: details.responseHeaders });
         return;
       }
@@ -219,10 +224,21 @@ if (!gotSingleInstanceLock) {
     void startService(mainWindow);
 
     app.on('activate', () => {
-      if (BrowserWindow.getAllWindows().length === 0) {
-        mainWindow = createWindow();
-        void startService(mainWindow);
+      if (mainWindow) {
+        mainWindow.focus();
+        return;
       }
+      mainWindow = createWindow();
+      if (!service) {
+        void startService(mainWindow);
+        return;
+      }
+      disposeBridge?.();
+      disposeBridge = registerBridge({
+        window: mainWindow,
+        service,
+        trustedOrigins: trustedOrigins(),
+      });
     });
   });
 

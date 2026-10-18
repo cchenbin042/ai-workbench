@@ -63,8 +63,15 @@ try {
     npm --prefix apps/desktop run package
   }
 
+  Invoke-Check 'packaged service bundle' {
+    $serviceExe = Join-Path $RepoRoot 'apps/desktop/out/ZhixuWorkbench-win32-x64/resources/workbench-service/workbench-service.exe'
+    if (-not (Test-Path $serviceExe)) {
+      throw "安装包缺少本地服务：$serviceExe"
+    }
+  }
+
   Invoke-Check 'desktop e2e' {
-    npm --prefix apps/desktop run test:e2e -- --grep '@shell'
+    npm --prefix apps/desktop run test:e2e -- --grep '@shell|@unit'
   }
 
   if (Test-Path 'contracts/rpc.schema.json') {
@@ -72,7 +79,8 @@ try {
       npm --prefix apps/desktop run contracts:types:check
     }
   } else {
-    Write-Warning 'contracts/rpc.schema.json 不存在；跳过 TypeScript 契约漂移检查。'
+    Write-Host 'FAIL: contract schema missing (contracts/rpc.schema.json)'
+    $Failures.Add('contract schema')
   }
 
   if ($Failures.Count -gt 0) {

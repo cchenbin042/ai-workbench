@@ -36,8 +36,6 @@ test.beforeAll(async () => {
       ...process.env,
       WORKBENCH_SERVICE_MODE: 'python',
       WORKBENCH_REPO_ROOT: repoRoot,
-      WORKBENCH_PYTHON: process.env.WORKBENCH_PYTHON ?? 'py',
-      WORKBENCH_PYTHON_ARG: process.env.WORKBENCH_PYTHON_ARG ?? '-3.14',
       WORKBENCH_DATA_DIR: dataDir,
     },
   });
@@ -64,13 +62,39 @@ test('@shell serves the renderer with a restrictive CSP header', async () => {
     return response.headers.get('content-security-policy');
   });
   expect(csp).toContain("default-src 'self'");
+  expect(csp).toContain("script-src 'self'");
+  expect(csp).not.toContain("script-src 'self' 'unsafe-inline'");
   expect(csp).toContain("object-src 'none'");
+  expect(csp).toContain("frame-src 'none'");
 });
 
-test('@shell blocks popup windows and keeps the app origin', async () => {
+test('@shell blocks popup windows and external navigation', async () => {
+  const before = electronApp.windows().length;
   const opened = await page.evaluate(() => window.open('https://example.com') === null);
   expect(opened).toBe(true);
+  expect(electronApp.windows().length).toBe(before);
+
+  await page.evaluate(() => {
+    window.location.href = 'https://example.com/';
+  });
+  await page.waitForTimeout(300);
   expect(new URL(page.url()).protocol).toBe('app:');
+
+  await page.reload();
+  await page.waitForLoadState('domcontentloaded');
+});
+
+test('@shell rejects path traversal on the app protocol', async () => {
+  const result = await page.evaluate(async () => {
+    try {
+      const response = await fetch('app://workbench/%2E%2E/%2E%2E/package.json');
+      return { status: response.status, text: await response.text() };
+    } catch {
+      return { status: 0, text: '' };
+    }
+  });
+  expect([0, 403, 404]).toContain(result.status);
+  expect(result.text).not.toContain('zhixu-workbench-desktop');
 });
 
 test('@shell reaches the local service and rejects non-public methods', async () => {
@@ -78,22 +102,30 @@ test('@shell reaches the local service and rejects non-public methods', async ()
   await expect(page.locator('[data-testid="service-protocol"]')).toHaveText('1');
   await expect(page.locator('[data-testid="service-schema"]')).toHaveText('0');
 
+  const status = await page.evaluate(() => window.workbench.getStatus());
+  expect(status.state).toBe('connected');
+  expect(status.protocolVersion).toBe(1);
+  expect(status.schemaVersion).toBe(0);
+  expect(await page.evaluate(() => typeof window.workbench.restartService)).toBe('function');
+
   const ping = await page.evaluate(() => window.workbench.call('system.ping', {}));
   expect((ping as { ok: boolean }).ok).toBe(true);
 
-  const rejected = await page.evaluate(async () => {
-    const call = window.workbench.call as unknown as (
-      method: string,
-      params?: Record<string, unknown>,
-    ) => Promise<unknown>;
-    try {
-      await call('system.shutdown', {});
-      return 'resolved';
-    } catch (error) {
-      return (error as Error).message;
-    }
-  });
-  expect(rejected).toContain('METHOD_NOT_ALLOWED');
+  for (const method of ['system.shutdown', 'system.initialize', 'materials.list']) {
+    const rejected = await page.evaluate(async (blockedMethod) => {
+      const call = window.workbench.call as unknown as (
+        name: string,
+        params?: Record<string, unknown>,
+      ) => Promise<unknown>;
+      try {
+        await call(blockedMethod, {});
+        return 'resolved';
+      } catch (error) {
+        return (error as Error).message;
+      }
+    }, method);
+    expect(rejected).toContain('METHOD_NOT_ALLOWED');
+  }
 });
 
 test('@shell contract type generation detects schema drift', async () => {

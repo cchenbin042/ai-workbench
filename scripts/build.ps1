@@ -1,7 +1,8 @@
 ﻿param(
   [ValidateSet('M1', 'M2', 'M3')]
   [string]$Stage = 'M1',
-  [switch]$Make
+  [switch]$Make,
+  [switch]$AllowShellOnly
 )
 
 $ErrorActionPreference = 'Stop'
@@ -44,6 +45,14 @@ try {
   npm --prefix apps/desktop run package
   if ($Make) {
     npm --prefix apps/desktop run make
+  }
+
+  $serviceExe = Join-Path $RepoRoot 'apps/desktop/out/ZhixuWorkbench-win32-x64/resources/workbench-service/workbench-service.exe'
+  if (-not (Test-Path $serviceExe)) {
+    if (-not $AllowShellOnly) {
+      throw "安装包缺少本地服务：$serviceExe。使用 -AllowShellOnly 仅构建桌面壳。"
+    }
+    Write-Warning '安装包未包含本地服务；这是显式允许的 shell-only 构建。'
   }
 
   $output = Join-Path $RepoRoot 'apps/desktop/out'

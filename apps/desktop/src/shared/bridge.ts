@@ -1,4 +1,4 @@
-export const PUBLIC_RPC_METHODS = ['system.initialize', 'system.ping'] as const;
+export const PUBLIC_RPC_METHODS = ['system.ping'] as const;
 
 export type PublicRpcMethod = (typeof PUBLIC_RPC_METHODS)[number];
 
@@ -43,6 +43,8 @@ export type BridgeEvent = ServiceStatusEvent | RpcEvent;
 
 export interface WorkbenchBridge {
   call(method: PublicRpcMethod, params?: Record<string, unknown>): Promise<unknown>;
+  getStatus(): Promise<ServiceStatus>;
+  restartService(): Promise<ServiceStatus>;
   subscribe(listener: (event: BridgeEvent) => void): () => void;
   runtime: {
     platform: string;

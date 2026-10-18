@@ -20,6 +20,14 @@ const bridge: WorkbenchBridge = {
     return ipcRenderer.invoke('workbench:call', method as PublicRpcMethod, params);
   },
 
+  async getStatus() {
+    return ipcRenderer.invoke('workbench:get-status');
+  },
+
+  async restartService() {
+    return ipcRenderer.invoke('workbench:restart-service');
+  },
+
   subscribe(listener) {
     if (typeof listener !== 'function') {
       throw new TypeError('listener must be a function');

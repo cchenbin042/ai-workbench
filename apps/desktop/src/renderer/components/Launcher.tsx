@@ -61,13 +61,12 @@ export function Launcher({ scene, onSceneChange }: LauncherProps) {
       </h1>
       <p className="launcher-subtitle">{current.subtitle}</p>
 
-      <div className="scene-tabs" role="tablist" aria-label="工作模块">
+      <div className="scene-tabs" role="group" aria-label="工作模块">
         {(Object.keys(scenes) as Scene[]).map((key) => (
           <button
             key={key}
             type="button"
-            role="tab"
-            aria-selected={scene === key}
+            aria-pressed={scene === key}
             className={`scene-tab ${scene === key ? 'selected' : ''}`}
             onClick={() => onSceneChange(key)}
           >

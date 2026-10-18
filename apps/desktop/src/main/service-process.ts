@@ -11,12 +11,14 @@ import type {
   PingResult,
   ServiceStatus,
 } from '../shared/bridge';
+import { FrameTooLargeError, JsonLineReader, MAX_FRAME_BYTES } from '../shared/json-line-reader';
+import { resolvePythonCommand } from '../shared/service-launch';
 
-const MAX_FRAME_BYTES = 8 * 1024 * 1024;
 const HANDSHAKE_TIMEOUT_MS = 15_000;
 const REQUEST_TIMEOUT_MS = 10_000;
 const HEARTBEAT_TIMEOUT_MS = 4_000;
 const HEARTBEAT_INTERVAL_MS = 5_000;
+const RECOVERY_PROBE_INTERVAL_MS = 30_000;
 const MAX_FAILED_HEARTBEATS = 3;
 
 interface PendingRequest {
@@ -45,6 +47,8 @@ export class WorkbenchService extends EventEmitter {
   private pending = new Map<string, PendingRequest>();
   private nextRequestId = 0;
   private heartbeatTimer: NodeJS.Timeout | null = null;
+  private recoveryTimer: NodeJS.Timeout | null = null;
+  private exitHandled = false;
   private stopping = false;
   private status: ServiceStatus = {
     state: 'stopped',
@@ -60,7 +64,11 @@ export class WorkbenchService extends EventEmitter {
   }
 
   async start(): Promise<InitializeResult> {
+    if (this.child) throw new Error('SERVICE_ALREADY_RUNNING');
     this.stopping = false;
+    this.exitHandled = false;
+    this.stopHeartbeat();
+    this.clearRecoveryTimer();
     this.updateStatus({ state: 'starting', error: undefined, consecutiveFailures: 0 });
 
     let launch: LaunchCommand;
@@ -80,9 +88,15 @@ export class WorkbenchService extends EventEmitter {
     });
     this.child = child;
 
-    child.stdout.setEncoding('utf8');
     child.stderr.setEncoding('utf8');
-    readline.createInterface({ input: child.stdout }).on('line', (line) => this.handleLine(line));
+    const stdoutReader = new JsonLineReader();
+    child.stdout.on('data', (chunk: Buffer) => {
+      try {
+        for (const line of stdoutReader.feed(chunk)) this.handleLine(line);
+      } catch (error) {
+        this.handleProtocolFailure(error);
+      }
+    });
     readline.createInterface({ input: child.stderr }).on('line', (line) => {
       console.error('[workbench-service]', line);
     });
@@ -113,6 +127,16 @@ export class WorkbenchService extends EventEmitter {
       this.failStart(error);
       throw error;
     }
+  }
+
+  async restart(): Promise<ServiceStatus> {
+    try {
+      await this.stop();
+      await this.start();
+    } catch {
+      // start() records the failure in status; the renderer reads the snapshot.
+    }
+    return this.getStatus();
   }
 
   async request<T>(
@@ -153,6 +177,7 @@ export class WorkbenchService extends EventEmitter {
   async stop(): Promise<void> {
     this.stopping = true;
     this.stopHeartbeat();
+    this.clearRecoveryTimer();
     const child = this.child;
     if (!child) {
       this.updateStatus({ state: 'stopped' });
@@ -166,9 +191,10 @@ export class WorkbenchService extends EventEmitter {
     }
 
     if (!(await waitForExit(child, 5_000))) {
-      killProcessTree(child);
+      await killProcessTree(child);
     }
     this.child = null;
+    this.exitHandled = true;
     this.rejectPending(new Error('SERVICE_STOPPED'));
     this.updateStatus({ state: 'stopped' });
   }
@@ -208,8 +234,51 @@ export class WorkbenchService extends EventEmitter {
       });
       if (consecutiveFailures >= MAX_FAILED_HEARTBEATS) {
         this.stopHeartbeat();
+        this.scheduleRecoveryProbe();
       }
     }
+  }
+
+  private scheduleRecoveryProbe(): void {
+    if (this.recoveryTimer || !this.child || this.stopping) return;
+    this.recoveryTimer = setTimeout(() => {
+      this.recoveryTimer = null;
+      void this.recoveryTick();
+    }, RECOVERY_PROBE_INTERVAL_MS);
+  }
+
+  private async recoveryTick(): Promise<void> {
+    if (!this.child || this.stopping) return;
+    const startedAt = Date.now();
+    try {
+      await this.request<PingResult>('system.ping', {}, HEARTBEAT_TIMEOUT_MS);
+      this.updateStatus({
+        state: 'connected',
+        lastLatencyMs: Date.now() - startedAt,
+        consecutiveFailures: 0,
+        error: undefined,
+      });
+      this.startHeartbeat();
+    } catch {
+      this.scheduleRecoveryProbe();
+    }
+  }
+
+  private clearRecoveryTimer(): void {
+    if (this.recoveryTimer) {
+      clearTimeout(this.recoveryTimer);
+      this.recoveryTimer = null;
+    }
+  }
+
+  private handleProtocolFailure(error: unknown): void {
+    const code = error instanceof FrameTooLargeError ? 'FRAME_TOO_LARGE' : 'PROTOCOL_ERROR';
+    console.error('[workbench-service]', code);
+    this.stopHeartbeat();
+    this.clearRecoveryTimer();
+    const child = this.child;
+    if (child) void killProcessTree(child);
+    this.finalizeExit(code);
   }
 
   private handleLine(line: string): void {
@@ -249,7 +318,14 @@ export class WorkbenchService extends EventEmitter {
 
   private handleExit(reason: string): void {
     if (this.stopping) return;
+    this.finalizeExit(reason);
+  }
+
+  private finalizeExit(reason: string): void {
+    if (this.exitHandled) return;
+    this.exitHandled = true;
     this.stopHeartbeat();
+    this.clearRecoveryTimer();
     this.child = null;
     this.rejectPending(new Error('SERVICE_DISCONNECTED'));
     this.updateStatus({
@@ -261,6 +337,11 @@ export class WorkbenchService extends EventEmitter {
 
   private failStart(error: unknown): void {
     this.stopHeartbeat();
+    this.clearRecoveryTimer();
+    const child = this.child;
+    if (child) void killProcessTree(child);
+    this.child = null;
+    this.exitHandled = true;
     this.rejectPending(new Error('SERVICE_START_FAILED'));
     this.updateStatus({
       state: 'disconnected',
@@ -285,13 +366,13 @@ export class WorkbenchService extends EventEmitter {
 
 function readRpcError(error: unknown): string {
   if (!error || typeof error !== 'object') return 'RPC_ERROR';
-  const record = error as Record<string, unknown>;
-  const data = record.data;
-  if (data && typeof data === 'object') {
-    const code = (data as Record<string, unknown>).code;
-    if (typeof code === 'string') return code;
-  }
-  return typeof record.message === 'string' ? record.message : 'RPC_ERROR';
+  const data = (error as Record<string, unknown>).data;
+  if (!data || typeof data !== 'object') return 'RPC_ERROR';
+
+  const record = data as Record<string, unknown>;
+  if (typeof record.user_message === 'string') return record.user_message;
+  if (typeof record.code === 'string') return record.code;
+  return 'RPC_ERROR';
 }
 
 function resolveLaunchCommand(dataDir: string): LaunchCommand {
@@ -299,16 +380,17 @@ function resolveLaunchCommand(dataDir: string): LaunchCommand {
   if (usePython) {
     const repoRoot =
       process.env.WORKBENCH_REPO_ROOT ?? path.resolve(app.getAppPath(), '..', '..');
+    const venvRelative = process.platform === 'win32' ? ['Scripts', 'python.exe'] : ['bin', 'python'];
+    const venvExists = fs.existsSync(path.join(repoRoot, '.venv', ...venvRelative));
+    const python = resolvePythonCommand({
+      repoRoot,
+      platform: process.platform,
+      venvExists,
+      env: process.env,
+    });
     return {
-      command: process.env.WORKBENCH_PYTHON ?? 'py',
-      args: [
-        process.env.WORKBENCH_PYTHON_ARG ?? '-3.14',
-        '-u',
-        '-m',
-        'workbench',
-        '--data-dir',
-        dataDir,
-      ],
+      command: python.command,
+      args: [...python.args, '--data-dir', dataDir],
       cwd: path.join(repoRoot, 'services', 'workbench'),
       env: {
         ...process.env,
@@ -344,15 +426,40 @@ function waitForExit(child: ChildProcessWithoutNullStreams, timeoutMs: number): 
   });
 }
 
-function killProcessTree(child: ChildProcessWithoutNullStreams): void {
-  if (!child.pid) return;
-  if (process.platform === 'win32') {
-    spawn('taskkill', ['/PID', String(child.pid), '/T', '/F'], {
+function killProcessTree(child: ChildProcessWithoutNullStreams): Promise<void> {
+  return new Promise((resolve) => {
+    if (!child.pid) {
+      resolve();
+      return;
+    }
+    if (process.platform !== 'win32') {
+      try {
+        child.kill('SIGKILL');
+      } catch {
+        // Process already exited.
+      }
+      resolve();
+      return;
+    }
+
+    const killer = spawn('taskkill', ['/PID', String(child.pid), '/T', '/F'], {
       shell: false,
       windowsHide: true,
       stdio: 'ignore',
     });
-    return;
-  }
-  child.kill('SIGKILL');
+    const timer = setTimeout(resolve, 3_000);
+    killer.once('exit', () => {
+      clearTimeout(timer);
+      resolve();
+    });
+    killer.once('error', () => {
+      clearTimeout(timer);
+      try {
+        child.kill();
+      } catch {
+        // Process already exited.
+      }
+      resolve();
+    });
+  });
 }
