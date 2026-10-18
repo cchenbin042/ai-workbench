@@ -1,0 +1,173 @@
+{
+  "checked_at": "2026-10-18T19:44:52.414883+08:00",
+  "scope": "Implementation-plan document checks only. Product implementation, planned tests, package builds, live requests, and commits have not been executed.",
+  "documents_checked": 7,
+  "plan_documents": 4,
+  "local_links_checked": 44,
+  "missing_local_links": [],
+  "task_count": 22,
+  "task_ids": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22
+  ],
+  "unchecked_steps": 112,
+  "functional_requirements_mapped": [
+    "FR01",
+    "FR02",
+    "FR03",
+    "FR04",
+    "FR05",
+    "FR06",
+    "FR07",
+    "FR08",
+    "FR09",
+    "FR10",
+    "FR11"
+  ],
+  "acceptance_cases_mapped": [
+    "AC01",
+    "AC02",
+    "AC03",
+    "AC04",
+    "AC05",
+    "AC06",
+    "AC07",
+    "AC08",
+    "AC09",
+    "AC10",
+    "AC11",
+    "AC12",
+    "AC13",
+    "AC14",
+    "AC15",
+    "AC16",
+    "AC17",
+    "AC18",
+    "AC19",
+    "AC20",
+    "AC21",
+    "AC22",
+    "AC23",
+    "AC24"
+  ],
+  "all_tasks_have_files_interfaces_assertions_verification_commit": true,
+  "python_assertion_blocks_syntax_checked": 19,
+  "markdown_code_fences_balanced": true,
+  "unfilled_placeholders": [],
+  "implementation_steps_marked_complete": 0,
+  "self_review": {
+    "spec_coverage": "checked",
+    "step_scan": "checked",
+    "type_consistency": "checked; generic tool-call extension is explicitly owned by Task 20",
+    "review_focus": "five classes per plan assigned to named tests",
+    "proportion": "checked; plans describe decisions and assertions, not implementation bodies"
+  },
+  "plans": [
+    {
+      "path": "docs/superpowers/plans/2026-10-18-ai-workbench-implementation-plan.md",
+      "lines": 137,
+      "characters": 9193,
+      "task_ids": [],
+      "unchecked_steps": 0
+    },
+    {
+      "path": "docs/superpowers/plans/2026-10-18-ai-workbench-m1-plan.md",
+      "lines": 211,
+      "characters": 17267,
+      "task_ids": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "unchecked_steps": 46
+    },
+    {
+      "path": "docs/superpowers/plans/2026-10-18-ai-workbench-m2-plan.md",
+      "lines": 173,
+      "characters": 13135,
+      "task_ids": [
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16
+      ],
+      "unchecked_steps": 35
+    },
+    {
+      "path": "docs/superpowers/plans/2026-10-18-ai-workbench-m3-plan.md",
+      "lines": 155,
+      "characters": 12976,
+      "task_ids": [
+        17,
+        18,
+        19,
+        20,
+        21,
+        22
+      ],
+      "unchecked_steps": 31
+    }
+  ],
+  "product_tests_run": false,
+  "dependencies_installed": false,
+  "implementation_started": false,
+  "deliverables": [
+    {
+      "path": "README.md",
+      "sha256": "a0e1baea9feb31b4b9e6250f46cc1067c24ed868555d8b2a14c2ce8fe6872515"
+    },
+    {
+      "path": "docs/product/prd-ai-workbench-v1.md",
+      "sha256": "33b6bc5a72cb0695a3fd3157504385fad8d4747f17e1e3b90b67b03c2bc8b5bc"
+    },
+    {
+      "path": "docs/technical/technical-design-v1.md",
+      "sha256": "6ae4f161575c6fbe6056eed4af5c98c62d711fa2e9cf80767e3f72ac913aea6e"
+    },
+    {
+      "path": "docs/superpowers/plans/2026-10-18-ai-workbench-implementation-plan.md",
+      "sha256": "8c207d95af2aea6eb53e82a15b0e37045bd0e1e0b2c543b5a2e4d1c259616cf7"
+    },
+    {
+      "path": "docs/superpowers/plans/2026-10-18-ai-workbench-m1-plan.md",
+      "sha256": "ad6367327822e96a25b08748be3a96e778a20e988971e29555fbeeb1a5d0435d"
+    },
+    {
+      "path": "docs/superpowers/plans/2026-10-18-ai-workbench-m2-plan.md",
+      "sha256": "b676f57865b24933470e7f8fc88cf43864bcf94385253b826ea8dd2544edad18"
+    },
+    {
+      "path": "docs/superpowers/plans/2026-10-18-ai-workbench-m3-plan.md",
+      "sha256": "1616e7fca98986a7a7a5b50f95a7be7829ac2612663fc5b01f31680608838882"
+    }
+  ]
+}
