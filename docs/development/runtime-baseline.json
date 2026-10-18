@@ -1,6 +1,6 @@
 {
   "recorded_date": "2026-10-18",
-  "scope": "backend scaffold; desktop runtime and application packaging are not yet validated",
+  "scope": "backend scaffold and development desktop handshake verified; packaged service and business milestones pending",
   "python": {
     "version": "3.14.2",
     "architecture": "AMD64",
@@ -10,12 +10,16 @@
   },
   "os": "Windows-11-10.0.26220-SP0",
   "git": {
-    "branch": "feat/backend-scaffold",
+    "branch": "feat/desktop-scaffold",
     "baseline_commit": "ff45f9070e31a50f77bb9b6fb6d54c13f27e258e",
     "remote_operations": false
   },
   "dependencies": {
-    "status": "installation_in_progress"
+    "status": "hash-locked installation verified in project and clean space-containing checkout",
+    "pydantic": "2.14.1",
+    "pytest": "9.1.1",
+    "pytest_asyncio": "1.4.0",
+    "pip_tools": "7.6.2"
   },
   "desktop": {
     "node": "24.13.1",
@@ -27,9 +31,15 @@
     "playwright": "1.64.1",
     "electron_mirror": "https://npmmirror.com/mirrors/electron/",
     "package_output": "apps/desktop/out/ZhixuWorkbench-win32-x64",
-    "status": "shell_built; service handshake blocked by backend scaffold"
+    "status": "shell + dev service handshake verified (9/9 Playwright); packaged service bundle pending"
   },
   "verification": {
-    "status": "pending"
+    "status": "backend scaffold passed; full M1 pending",
+    "backend_tests": 57,
+    "desktop_integration_tests": 9,
+    "schema_check": "passed",
+    "compileall": "passed",
+    "pip_check": "passed",
+    "clean_space_path": "bootstrap and verification passed"
   }
 }

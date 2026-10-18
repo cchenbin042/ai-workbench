@@ -1,0 +1,465 @@
+{
+  "$defs": {
+    "CommandMeta": {
+      "additionalProperties": false,
+      "properties": {
+        "expected_revision": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Expected Revision"
+        },
+        "method": {
+          "minLength": 1,
+          "title": "Method",
+          "type": "string"
+        },
+        "operation_id": {
+          "minLength": 1,
+          "title": "Operation Id",
+          "type": "string"
+        },
+        "scope_id": {
+          "minLength": 1,
+          "title": "Scope Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "operation_id",
+        "method",
+        "scope_id"
+      ],
+      "title": "CommandMeta",
+      "type": "object"
+    },
+    "DomainErrorData": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "minLength": 1,
+          "title": "Code",
+          "type": "string"
+        },
+        "committed": {
+          "default": false,
+          "title": "Committed",
+          "type": "boolean"
+        },
+        "retryable": {
+          "default": false,
+          "title": "Retryable",
+          "type": "boolean"
+        },
+        "user_message": {
+          "minLength": 1,
+          "title": "User Message",
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "user_message"
+      ],
+      "title": "DomainErrorData",
+      "type": "object"
+    },
+    "InitializeResult": {
+      "additionalProperties": false,
+      "properties": {
+        "capabilities": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Capabilities",
+          "type": "array"
+        },
+        "protocol_version": {
+          "const": 1,
+          "default": 1,
+          "title": "Protocol Version",
+          "type": "integer"
+        },
+        "schema_version": {
+          "const": 0,
+          "default": 0,
+          "title": "Schema Version",
+          "type": "integer"
+        },
+        "service_instance_id": {
+          "minLength": 1,
+          "title": "Service Instance Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "service_instance_id",
+        "capabilities"
+      ],
+      "title": "InitializeResult",
+      "type": "object"
+    },
+    "JsonValue": {},
+    "ModelMessage": {
+      "additionalProperties": false,
+      "properties": {
+        "content": {
+          "title": "Content",
+          "type": "string"
+        },
+        "role": {
+          "enum": [
+            "system",
+            "user",
+            "assistant",
+            "tool"
+          ],
+          "title": "Role",
+          "type": "string"
+        }
+      },
+      "required": [
+        "role",
+        "content"
+      ],
+      "title": "ModelMessage",
+      "type": "object"
+    },
+    "ModelRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "max_tokens": {
+          "default": 8000,
+          "exclusiveMinimum": 0,
+          "title": "Max Tokens",
+          "type": "integer"
+        },
+        "messages": {
+          "items": {
+            "$ref": "#/$defs/ModelMessage"
+          },
+          "minItems": 1,
+          "title": "Messages",
+          "type": "array"
+        },
+        "model_id": {
+          "minLength": 1,
+          "title": "Model Id",
+          "type": "string"
+        },
+        "response_format": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "$ref": "#/$defs/JsonValue"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Response Format"
+        }
+      },
+      "required": [
+        "messages",
+        "model_id"
+      ],
+      "title": "ModelRequest",
+      "type": "object"
+    },
+    "ModelResult": {
+      "additionalProperties": false,
+      "properties": {
+        "content": {
+          "title": "Content",
+          "type": "string"
+        },
+        "finish_reason": {
+          "minLength": 1,
+          "title": "Finish Reason",
+          "type": "string"
+        },
+        "request_id": {
+          "minLength": 1,
+          "title": "Request Id",
+          "type": "string"
+        },
+        "usage": {
+          "additionalProperties": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "title": "Usage",
+          "type": "object"
+        }
+      },
+      "required": [
+        "content",
+        "finish_reason",
+        "request_id",
+        "usage"
+      ],
+      "title": "ModelResult",
+      "type": "object"
+    },
+    "PingResult": {
+      "additionalProperties": false,
+      "properties": {
+        "ok": {
+          "const": true,
+          "default": true,
+          "title": "Ok",
+          "type": "boolean"
+        },
+        "service_instance_id": {
+          "minLength": 1,
+          "title": "Service Instance Id",
+          "type": "string"
+        },
+        "status": {
+          "const": "ok",
+          "default": "ok",
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "service_instance_id"
+      ],
+      "title": "PingResult",
+      "type": "object"
+    },
+    "RpcError": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "title": "Code",
+          "type": "integer"
+        },
+        "data": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DomainErrorData"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "message": {
+          "minLength": 1,
+          "title": "Message",
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "message"
+      ],
+      "title": "RpcError",
+      "type": "object"
+    },
+    "RpcFailure": {
+      "additionalProperties": false,
+      "properties": {
+        "error": {
+          "$ref": "#/$defs/RpcError"
+        },
+        "id": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Id"
+        },
+        "jsonrpc": {
+          "const": "2.0",
+          "default": "2.0",
+          "title": "Jsonrpc",
+          "type": "string"
+        }
+      },
+      "required": [
+        "error"
+      ],
+      "title": "RpcFailure",
+      "type": "object"
+    },
+    "RpcRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Id"
+        },
+        "jsonrpc": {
+          "const": "2.0",
+          "title": "Jsonrpc",
+          "type": "string"
+        },
+        "method": {
+          "minLength": 1,
+          "title": "Method",
+          "type": "string"
+        },
+        "params": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "$ref": "#/$defs/JsonValue"
+              },
+              "type": "object"
+            },
+            {
+              "items": {
+                "$ref": "#/$defs/JsonValue"
+              },
+              "type": "array"
+            }
+          ],
+          "title": "Params"
+        }
+      },
+      "required": [
+        "jsonrpc",
+        "method"
+      ],
+      "title": "RpcRequest",
+      "type": "object"
+    },
+    "RpcSuccess": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Id"
+        },
+        "jsonrpc": {
+          "const": "2.0",
+          "default": "2.0",
+          "title": "Jsonrpc",
+          "type": "string"
+        },
+        "result": {
+          "$ref": "#/$defs/JsonValue"
+        }
+      },
+      "required": [
+        "id",
+        "result"
+      ],
+      "title": "RpcSuccess",
+      "type": "object"
+    },
+    "ShutdownResult": {
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "const": "shutting_down",
+          "default": "shutting_down",
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "title": "ShutdownResult",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "command_meta": {
+      "$ref": "#/$defs/CommandMeta"
+    },
+    "initialize": {
+      "$ref": "#/$defs/InitializeResult"
+    },
+    "model_request": {
+      "$ref": "#/$defs/ModelRequest"
+    },
+    "model_result": {
+      "$ref": "#/$defs/ModelResult"
+    },
+    "ping": {
+      "$ref": "#/$defs/PingResult"
+    },
+    "request": {
+      "$ref": "#/$defs/RpcRequest"
+    },
+    "response": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/RpcSuccess"
+        },
+        {
+          "$ref": "#/$defs/RpcFailure"
+        }
+      ],
+      "title": "Response"
+    },
+    "shutdown": {
+      "$ref": "#/$defs/ShutdownResult"
+    }
+  },
+  "required": [
+    "command_meta",
+    "model_request",
+    "model_result",
+    "request",
+    "response",
+    "initialize",
+    "ping",
+    "shutdown"
+  ],
+  "title": "WorkbenchRpcContract",
+  "type": "object"
+}

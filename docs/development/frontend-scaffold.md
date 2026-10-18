@@ -1,6 +1,6 @@
 # 前端脚手架实施记录
 
-日期：2026-10-18（Asia/Shanghai）。状态：桌面壳与受限 bridge 已可启动、已构建；本地服务握手仍被后端脚手架阻塞。
+日期：2026-10-18（Asia/Shanghai）。状态：桌面壳与受限 bridge 已可启动、已构建；本地服务握手已与后端贯通，安装包服务捆绑待完成。
 
 范围依据：[M1 Task 01](../superpowers/plans/2026-10-18-ai-workbench-m1-plan.md)、[技术方案](../technical/technical-design-v1.md)、[后端脚手架计划](../superpowers/plans/2026-10-18-backend-scaffold-plan.md)。本轮只交付前端部分，不把父计划 Task 01 标为整体完成。
 
@@ -42,8 +42,10 @@ Electron 二进制默认使用 `https://npmmirror.com/mirrors/electron/` 镜像�
 - `npm run typecheck`：通过。
 - `npm run package`：通过，产物 `apps/desktop/out/ZhixuWorkbench-win32-x64`，主进程 `.vite/build/main.cjs`，preload `.vite/build/preload.cjs`。
 - Playwright `@unit`：3 项通过（IPC sender/origin/method/params、入站帧上限与分片 UTF-8、venv 启动选择）。
-- Playwright `@shell`：4 项通过（app origin/无 Node API、CSP、弹窗与外链拦截、协议路径穿越）；服务握手 1 项失败，原因是 `services/workbench/src/workbench/rpc.py` 与 `__main__.py` 仍为 `NotImplementedError` 桩；契约漂移 1 项因 `contracts/rpc.schema.json` 尚未导出而跳过。
-- 安装包当前不含 Python 服务：后端脚手架范围明确不包含 PyInstaller 与桌面打包。`build.ps1` 默认在缺少服务包时失败；`-AllowShellOnly` 可显式构建 shell-only 包。`verify.ps1` 同样把缺少服务包和缺少契约 schema 计为失败。
+- Playwright `@shell`：6 项通过（app origin/无 Node API、CSP、弹窗与外链拦截、协议路径穿越、本地服务握手、契约漂移）；与 `@unit` 合计 9/9 通过。
+- 依赖证据：后端 `.venv` 测试 54 passed；`npm run contracts:types:check` 通过（schema 由后端工作流生成）。
+- 安装包当前不含 Python 服务：未安装 PyInstaller，`services/workbench/dist/workbench-service` 不存在。`build.ps1` 默认在缺少服务包时失败；`-AllowShellOnly` 可显式构建 shell-only 包。`verify.ps1` 同样把缺少服务包和缺少契约 schema 计为失败。
+- 历史说明：同日早期后端为 `NotImplementedError` 桩时，`@shell` 为 4 通过 / 1 失败 / 1 跳过；后端实现完成后的最新结果为 9/9。旧结论保留在 [T001](tasks/T001-2026-10-18-desktop-scaffold.md) 的开发记录中，不伪装为未发生。
 
 ## 安全边界
 
@@ -55,9 +57,9 @@ Electron 二进制默认使用 `https://npmmirror.com/mirrors/electron/` 镜像�
 
 ## 未完成 / 阻塞
 
-1. 真实 `system.initialize/ping/shutdown` 实现与后端测试，由后端脚手架负责；当前 `pytest` 还因 `request` 是 pytest 9 保留参数名而在收集阶段失败。
-2. `contracts/rpc.schema.json` 与 `contracts/generated.ts` 的正式生成。
-3. PyInstaller onedir 服务包、安装包内启动、无 Python/Node 环境验证。
-4. Windows Job Object 子进程树管理尚未实现；当前使用 `taskkill /T` 并等待退出，作为脚手架阶段的受控清理。完整隔离在打包阶段补齐。
-5. 业务页面（资料、DeepSeek、题库、面试、语音、MCP）按 M1～M3 后续任务实现。
-6. 打包后 `extraResource` 已预留 `services/workbench/dist/workbench-service`；该目录创建后 Forge 会自动纳入。
+1. PyInstaller onedir 服务包、安装包内启动、无 Python/Node 环境验证；当前严格构建按设计失败。
+2. 后端与契约文件尚未提交（`services/`、`scripts/*-backend`、`contracts/`），归后端工作流维护。
+3. Windows Job Object 子进程树管理尚未实现；当前使用 `taskkill /T` 并等待退出，作为脚手架阶段的受控清理。完整隔离在打包阶段补齐。
+4. 业务页面（资料、DeepSeek、题库、面试、语音、MCP）按 M1～M3 后续任务实现。
+5. 打包后 `extraResource` 已预留 `services/workbench/dist/workbench-service`；该目录创建后 Forge 会自动纳入。
+6. 真实 DeepSeek/ASR 尚未配置或验证。

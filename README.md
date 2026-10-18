@@ -1,6 +1,6 @@
 # 知序 · 个人 AI 工作台
 
-日期：2026-10-18。当前阶段：**UI 交互原型、PRD、技术方案与实施方案已整理完成，正式桌面工程尚未开始。**
+日期：2026-10-18。当前阶段：**桌面壳与 Python 后端脚手架已贯通；后端 57 项测试、桌面集成 9 项通过，业务流程与服务发行包待实现。**
 
 面向有 Java 背景、正在学习 Python/Agent 的个人开发者。借鉴 WorkBuddy 的共用导航、任务、资料、Agent 和成果组织，首批应用为面试题整理与 AI 面试官，再完善课程学习复盘。文本大模型方向为 DeepSeek 云端，本机不运行大模型。
 
@@ -10,7 +10,7 @@
 | --- | --- |
 | [PRD v1.0](docs/product/prd-ai-workbench-v1.md) | 用户问题、首版范围、默认、11 项需求、数据/状态、24 项正式验收和里程碑 |
 | [技术方案 v1.0](docs/technical/technical-design-v1.md) | Electron/React + Python + SQLite、通信与数据契约、任务恢复、模型/语音/MCP、分期验收与打包 |
-| [实施方案](docs/superpowers/plans/2026-10-18-ai-workbench-implementation-plan.md) | M1/M2/M3 三份计划、22 个未开始任务、文件与接口、测试命令、阶段验收及提交顺序 |
+| [实施方案](docs/superpowers/plans/2026-10-18-ai-workbench-implementation-plan.md) | M1/M2/M3 三份计划、接口与阶段验收；当前状态见开发台账 |
 | [UI 页面与交互](docs/product/2026-10-18-workbench-ui-design.md) | 共用布局、13 类页面、动作/状态、响应式与截图 |
 | [设计覆盖与实现差距](docs/product/2026-10-18-design-coverage.md) | 原型已做、演示、正式待开发及验证证据 |
 | [原型体验说明](prototypes/workbench-ui/README.md) | 本机打开方式、体验顺序与检查命令 |
@@ -18,6 +18,25 @@
 | [早期需求探索](docs/product/2026-10-18-learning-workbench-discovery.md) | 场景、确认记录与课程输入限制 |
 
 当前行为以 PRD 为准，旧探索文档保留来历；原型用于交互表达，不替代正式验收。未明确的细节采用文档标明的设计默认，不记作用户逐项批准。
+
+## 开发台账
+
+- 总文档：[docs/development/master-plan.md](docs/development/master-plan.md)
+- 任务明细：[docs/development/tasks/](docs/development/tasks/)
+- 项目模板：[docs/development/task-template.md](docs/development/task-template.md)
+- 维护规则：**每个开发任务完成后必须使用 `dev-task-tracker` skill 回写**；功能点完成即写明细，开发结束同步总文档。
+
+## 后端脚手架
+
+运行说明见 [services/workbench/README.md](services/workbench/README.md)，验证记录见 [backend-scaffold.md](docs/development/backend-scaffold.md)。在仓库根目录：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/bootstrap-backend.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify-backend.ps1
+.\.venv\Scripts\python.exe -u -m workbench --data-dir 'D:\workbench data'
+```
+
+当前为本地 stdio 服务，不提供 HTTP 端口；需要向 stdin 发送 JSON-RPC。SQLite、模型调用与安装包内 Python 服务仍按后续任务完成。
 
 ## 打开原型
 
