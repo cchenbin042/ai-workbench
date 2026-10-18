@@ -42,7 +42,7 @@ def test_initialize_ping_shutdown_with_stdin_still_open(service):
     process, responses = service()
     send(process,"system.initialize")
     result = responses.get(timeout=4)["result"]
-    assert result["protocol_version"] == 1 and result["schema_version"] == 0
+    assert result["protocol_version"] == 1 and result["schema_version"] == 1
     uuid.UUID(result["service_instance_id"])
     assert "system.shutdown" in result["capabilities"]
     send(process,"system.initialize",id=2)
@@ -171,3 +171,68 @@ def test_shutdown_with_queued_input_never_leaks_reader_diagnostics(tmp_path):
         assert result.returncode == 0
         assert json.loads(result.stdout)["result"]["status"] == "shutting_down"
         assert result.stderr == b""
+
+
+def test_drafts_persist_replay_and_revisions_across_service_restart(service):
+    process, responses = service()
+    command = {"operation_id": str(uuid.uuid4()), "scope_id": "local",
+               "owner_type": "local", "owner_id": "editor-1",
+               "content_json": {"text": "草稿正文"}}
+    send(process, "drafts.save", params=command)
+    first = responses.get(timeout=4)["result"]
+    assert first["revision"] == 1
+    uuid.UUID(first["draft_id"])
+    send(process, "system.shutdown", id=2)
+    assert responses.get(timeout=3)["result"]["status"] == "shutting_down"
+    assert process.wait(timeout=3) == 0
+    process, responses = service()
+    send(process, "drafts.save", params=command)
+    assert responses.get(timeout=4)["result"] == first
+    owner = {key: command[key] for key in ["scope_id", "owner_type", "owner_id"]}
+    send(process, "drafts.get", id=2, params=owner)
+    loaded = responses.get(timeout=3)["result"]
+    assert loaded == {**first, **owner, "content_json": command["content_json"]}
+    send(process, "drafts.save", id=3, params={**command, "content_json": {"text": "changed"}})
+    assert responses.get(timeout=3)["error"]["data"]["code"] == "OPERATION_CONFLICT"
+    send(process, "drafts.save", id=4, params={**command, "operation_id": str(uuid.uuid4())})
+    error = responses.get(timeout=3)["error"]["data"]
+    assert error["code"] == "REVISION_CONFLICT" and error["committed"] is False
+    send(process, "drafts.get", id=5, params={**owner, "scope_id": "private-token"})
+    error = responses.get(timeout=3)["error"]
+    assert error["code"] == -32602 and "private-token" not in json.dumps(error)
+    send(process, "drafts.get", id=6, params={**owner, "owner_id": "missing"})
+    assert responses.get(timeout=3)["error"]["data"]["code"] == "DRAFT_NOT_FOUND"
+    send(process, "system.shutdown", id=7)
+    assert responses.get(timeout=3)["id"] == 7
+    assert process.wait(timeout=3) == 0
+    assert process.stderr.read() == b""
+
+
+def test_eof_drains_draft_commit_before_service_exit(service):
+    process, responses = service()
+    command = {"operation_id": str(uuid.uuid4()), "scope_id": "local",
+               "owner_type": "local", "owner_id": "editor-1",
+               "content_json": {"text": "durable"}}
+    send(process, "drafts.save", params=command)
+    process.stdin.close()
+    first = responses.get(timeout=4)["result"]
+    assert process.wait(timeout=3) == 0
+    process, responses = service()
+    send(process, "drafts.save", params=command)
+    assert responses.get(timeout=4)["result"] == first
+    send(process, "system.shutdown", id=2)
+    assert responses.get(timeout=3)["id"] == 2
+    assert process.wait(timeout=3) == 0
+
+
+def test_corrupt_database_startup_never_emits_protocol_or_private_data(tmp_path):
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+    (data_dir / "workbench.sqlite3").write_bytes(b"private-token invalid database")
+    process = subprocess.run(
+        [sys.executable, "-u", "-m", "workbench", "--data-dir", str(tmp_path)],
+        input=b"", capture_output=True, timeout=4,
+    )
+    assert process.returncode != 0
+    assert process.stdout == b""
+    assert process.stderr and b"private-token" not in process.stderr

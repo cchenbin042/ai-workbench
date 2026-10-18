@@ -1,0 +1,2 @@
+# Migration checksums must survive checkouts on Windows and Unix.
+services/workbench/src/workbench/migrations/*.sql text eol=lf

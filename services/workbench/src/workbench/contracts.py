@@ -1,7 +1,7 @@
 """Validated public DTOs and deliberately safe RPC errors."""
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, JsonValue, StrictBool, StrictFloat, StrictInt
+from pydantic import BaseModel, ConfigDict, Field, JsonValue, StrictBool, StrictFloat, StrictInt, field_validator
 
 NonEmptyStr = Annotated[str, Field(min_length=1)]
 NonNegativeInt = Annotated[StrictInt, Field(ge=0)]
@@ -87,7 +87,7 @@ class RpcFailure(Contract):
 
 class InitializeResult(Contract):
     protocol_version: Literal[1] = 1
-    schema_version: Literal[0] = 0
+    schema_version: NonNegativeInt = 0
     service_instance_id: NonEmptyStr
     capabilities: list[str]
 
@@ -102,7 +102,45 @@ class ShutdownResult(Contract):
     status: Literal["shutting_down"] = "shutting_down"
 
 
+class GetDraftCommand(Contract):
+    scope_id: Literal["local"]
+    owner_type: Literal["local"]
+    owner_id: Annotated[str, Field(min_length=1, max_length=128)]
+
+
+class SaveDraftCommand(GetDraftCommand):
+    operation_id: Annotated[str, Field(min_length=1, max_length=128)]
+    expected_revision: NonNegativeInt | None = None
+    content_json: dict[str, JsonValue]
+
+    @field_validator("content_json")
+    @classmethod
+    def bounded_content(cls, value):
+        import json
+        content = json.dumps(value, ensure_ascii=False, allow_nan=False, separators=(",", ":"))
+        if len(content.encode("utf-8")) > 200000:
+            raise ValueError("Draft content is too large")
+        return value
+
+
+class SaveDraftResult(Contract):
+    draft_id: NonEmptyStr
+    revision: Annotated[StrictInt, Field(gt=0)]
+    saved_at: NonEmptyStr
+
+
+class DraftResult(SaveDraftResult):
+    scope_id: Literal["local"]
+    owner_type: Literal["local"]
+    owner_id: NonEmptyStr
+    content_json: dict[str, JsonValue]
+
+
 class WorkbenchRpcContract(Contract):
+    save_draft_command: SaveDraftCommand
+    get_draft_command: GetDraftCommand
+    save_draft_result: SaveDraftResult
+    draft: DraftResult
     command_meta: CommandMeta
     model_request: ModelRequest
     model_result: ModelResult

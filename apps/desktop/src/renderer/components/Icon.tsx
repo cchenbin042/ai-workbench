@@ -10,6 +10,9 @@ const paths = {
   check: '<path d="m5 12 4 4L19 6"/>',
   alert: '<circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 17h.01"/>',
   refresh: '<path d="M20 7a9 9 0 0 0-15-2L2 8m0-6v6h6M4 17a9 9 0 0 0 15 2l3-3m0 6v-6h-6"/>',
+  history: '<path d="M3 11a9 9 0 1 1 2 7M3 4v7h7M12 7v5l4 2"/>',
+  shield: '<path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6l8-3Z"/><path d="m8 12 3 3 5-6"/>',
+  arrow: '<path d="M4 12h16m-6-6 6 6-6 6"/>',
 } as const;
 
 export type IconName = keyof typeof paths;

@@ -7,9 +7,19 @@ export type ExpectedRevision = number | null;
 export type Method = string;
 export type OperationId = string;
 export type ScopeId = string;
+export type JsonValue = unknown;
+export type DraftId = string;
+export type OwnerId = string;
+export type OwnerType = 'local';
+export type Revision = number;
+export type SavedAt = string;
+export type ScopeId1 = 'local';
+export type OwnerId1 = string;
+export type OwnerType1 = 'local';
+export type ScopeId2 = 'local';
 export type Capabilities = string[];
 export type ProtocolVersion = 1;
-export type SchemaVersion = 0;
+export type SchemaVersion = number;
 export type ServiceInstanceId = string;
 export type MaxTokens = number;
 /**
@@ -22,7 +32,6 @@ export type ModelId = string;
 export type ResponseFormat = {
   [k: string]: JsonValue;
 } | null;
-export type JsonValue = unknown;
 export type Content1 = string;
 export type FinishReason = string;
 export type RequestId = string;
@@ -48,16 +57,28 @@ export type UserMessage = string;
 export type Message = string;
 export type Id2 = number | string | null;
 export type Jsonrpc2 = '2.0';
+export type ExpectedRevision1 = number | null;
+export type OperationId1 = string;
+export type OwnerId2 = string;
+export type OwnerType2 = 'local';
+export type ScopeId3 = 'local';
+export type DraftId1 = string;
+export type Revision1 = number;
+export type SavedAt1 = string;
 export type Status1 = 'shutting_down';
 
 export interface WorkbenchRpcContract {
   command_meta: CommandMeta;
+  draft: DraftResult;
+  get_draft_command: GetDraftCommand;
   initialize: InitializeResult;
   model_request: ModelRequest;
   model_result: ModelResult;
   ping: PingResult;
   request: RpcRequest;
   response: Response;
+  save_draft_command: SaveDraftCommand;
+  save_draft_result: SaveDraftResult;
   shutdown: ShutdownResult;
 }
 export interface CommandMeta {
@@ -65,6 +86,23 @@ export interface CommandMeta {
   method: Method;
   operation_id: OperationId;
   scope_id: ScopeId;
+}
+export interface DraftResult {
+  content_json: ContentJson;
+  draft_id: DraftId;
+  owner_id: OwnerId;
+  owner_type: OwnerType;
+  revision: Revision;
+  saved_at: SavedAt;
+  scope_id: ScopeId1;
+}
+export interface ContentJson {
+  [k: string]: JsonValue;
+}
+export interface GetDraftCommand {
+  owner_id: OwnerId1;
+  owner_type: OwnerType1;
+  scope_id: ScopeId2;
 }
 export interface InitializeResult {
   capabilities: Capabilities;
@@ -122,6 +160,22 @@ export interface DomainErrorData {
   committed?: Committed;
   retryable?: Retryable;
   user_message: UserMessage;
+}
+export interface SaveDraftCommand {
+  content_json: ContentJson1;
+  expected_revision?: ExpectedRevision1;
+  operation_id: OperationId1;
+  owner_id: OwnerId2;
+  owner_type: OwnerType2;
+  scope_id: ScopeId3;
+}
+export interface ContentJson1 {
+  [k: string]: JsonValue;
+}
+export interface SaveDraftResult {
+  draft_id: DraftId1;
+  revision: Revision1;
+  saved_at: SavedAt1;
 }
 export interface ShutdownResult {
   status?: Status1;

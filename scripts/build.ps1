@@ -31,6 +31,8 @@ try {
         --noconfirm --clean --onedir `
         --name workbench-service `
         --paths src `
+        --collect-data workbench `
+        --copy-metadata zhixu-workbench `
         --distpath dist `
         --workpath build `
         --specpath build `

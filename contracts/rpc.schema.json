@@ -71,6 +71,87 @@
       "title": "DomainErrorData",
       "type": "object"
     },
+    "DraftResult": {
+      "additionalProperties": false,
+      "properties": {
+        "content_json": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Content Json",
+          "type": "object"
+        },
+        "draft_id": {
+          "minLength": 1,
+          "title": "Draft Id",
+          "type": "string"
+        },
+        "owner_id": {
+          "minLength": 1,
+          "title": "Owner Id",
+          "type": "string"
+        },
+        "owner_type": {
+          "const": "local",
+          "title": "Owner Type",
+          "type": "string"
+        },
+        "revision": {
+          "exclusiveMinimum": 0,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "saved_at": {
+          "minLength": 1,
+          "title": "Saved At",
+          "type": "string"
+        },
+        "scope_id": {
+          "const": "local",
+          "title": "Scope Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "draft_id",
+        "revision",
+        "saved_at",
+        "scope_id",
+        "owner_type",
+        "owner_id",
+        "content_json"
+      ],
+      "title": "DraftResult",
+      "type": "object"
+    },
+    "GetDraftCommand": {
+      "additionalProperties": false,
+      "properties": {
+        "owner_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Owner Id",
+          "type": "string"
+        },
+        "owner_type": {
+          "const": "local",
+          "title": "Owner Type",
+          "type": "string"
+        },
+        "scope_id": {
+          "const": "local",
+          "title": "Scope Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "scope_id",
+        "owner_type",
+        "owner_id"
+      ],
+      "title": "GetDraftCommand",
+      "type": "object"
+    },
     "InitializeResult": {
       "additionalProperties": false,
       "properties": {
@@ -88,8 +169,8 @@
           "type": "integer"
         },
         "schema_version": {
-          "const": 0,
           "default": 0,
+          "minimum": 0,
           "title": "Schema Version",
           "type": "integer"
         },
@@ -400,6 +481,89 @@
       "title": "RpcSuccess",
       "type": "object"
     },
+    "SaveDraftCommand": {
+      "additionalProperties": false,
+      "properties": {
+        "content_json": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Content Json",
+          "type": "object"
+        },
+        "expected_revision": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Expected Revision"
+        },
+        "operation_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Operation Id",
+          "type": "string"
+        },
+        "owner_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Owner Id",
+          "type": "string"
+        },
+        "owner_type": {
+          "const": "local",
+          "title": "Owner Type",
+          "type": "string"
+        },
+        "scope_id": {
+          "const": "local",
+          "title": "Scope Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "scope_id",
+        "owner_type",
+        "owner_id",
+        "operation_id",
+        "content_json"
+      ],
+      "title": "SaveDraftCommand",
+      "type": "object"
+    },
+    "SaveDraftResult": {
+      "additionalProperties": false,
+      "properties": {
+        "draft_id": {
+          "minLength": 1,
+          "title": "Draft Id",
+          "type": "string"
+        },
+        "revision": {
+          "exclusiveMinimum": 0,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "saved_at": {
+          "minLength": 1,
+          "title": "Saved At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "draft_id",
+        "revision",
+        "saved_at"
+      ],
+      "title": "SaveDraftResult",
+      "type": "object"
+    },
     "ShutdownResult": {
       "additionalProperties": false,
       "properties": {
@@ -419,6 +583,12 @@
   "properties": {
     "command_meta": {
       "$ref": "#/$defs/CommandMeta"
+    },
+    "draft": {
+      "$ref": "#/$defs/DraftResult"
+    },
+    "get_draft_command": {
+      "$ref": "#/$defs/GetDraftCommand"
     },
     "initialize": {
       "$ref": "#/$defs/InitializeResult"
@@ -446,11 +616,21 @@
       ],
       "title": "Response"
     },
+    "save_draft_command": {
+      "$ref": "#/$defs/SaveDraftCommand"
+    },
+    "save_draft_result": {
+      "$ref": "#/$defs/SaveDraftResult"
+    },
     "shutdown": {
       "$ref": "#/$defs/ShutdownResult"
     }
   },
   "required": [
+    "save_draft_command",
+    "get_draft_command",
+    "save_draft_result",
+    "draft",
     "command_meta",
     "model_request",
     "model_result",

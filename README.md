@@ -1,6 +1,6 @@
 # 知序 · 个人 AI 工作台
 
-日期：2026-10-18。当前阶段：**桌面壳与 Python 后端脚手架已贯通；后端 57 项测试、桌面集成 9 项通过，业务流程与服务发行包待实现。**
+日期：2026-10-18。当前阶段：**桌面壳、Python 服务与 SQLite 持久化已贯通；本地草稿保存/读取已实现，真实建题业务与服务发行包待完成。**
 
 面向有 Java 背景、正在学习 Python/Agent 的个人开发者。借鉴 WorkBuddy 的共用导航、任务、资料、Agent 和成果组织，首批应用为面试题整理与 AI 面试官，再完善课程学习复盘。文本大模型方向为 DeepSeek 云端，本机不运行大模型。
 
@@ -36,7 +36,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify-backend.ps1
 .\.venv\Scripts\python.exe -u -m workbench --data-dir 'D:\workbench data'
 ```
 
-当前为本地 stdio 服务，不提供 HTTP 端口；需要向 stdin 发送 JSON-RPC。SQLite、模型调用与安装包内 Python 服务仍按后续任务完成。
+当前为本地 stdio 服务，不提供 HTTP 端口；需要向 stdin 发送 JSON-RPC。已提供 SQLite 与本地草稿保存/读取 RPC，使用示例见[后端说明](services/workbench/README.md)；模型调用、前端草稿持久化接入和安装包内 Python 服务继续按后续任务完成。
 
 ## 打开原型
 

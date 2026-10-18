@@ -1,9 +1,9 @@
 # 知序 · 个人 AI 工作台 开发任务总览
 
 > 最近更新：2026-10-18
-> 当前阶段：M1 桌面与本地服务脚手架已贯通；真实建题业务流尚未开始
-> 当前任务：无执行中任务；T001、T002 已完成，下一任务待建档
-> 下一步：建立 M1 服务打包与安装验收任务，随后执行 M1 Task 02～09
+> 当前阶段：M1 桌面、本地服务与 SQLite 存储已贯通；真实建题业务流尚未开始
+> 当前任务：T003 后端存储、T004 共用导航与首页壳已完成
+> 下一步：后端 M1 Task 03（任务队列、事件、取消与恢复）；前端草稿持久化和业务 RPC 联调继续接续；G01 服务打包验收独立保留
 
 ## 1. 主线目标与范围
 
@@ -33,8 +33,8 @@
 ## 3. 已核验基线
 
 - 设计交付：[设计覆盖与实现差距](../product/2026-10-18-design-coverage.md)记录原型四组检查 42 项通过；原型仍是演示，不替代正式验收。
-- 桌面脚手架：提交 `0d77993`、`ede04f2`；`npm --prefix apps/desktop run typecheck` 通过；`npm --prefix apps/desktop run package` 通过；Playwright `@shell|@unit` 9/9 通过；产物在 `apps/desktop/out/ZhixuWorkbench-win32-x64`。
-- 本地服务脚手架：后端工作流已实现 RPC/CLI/契约；`.venv/Scripts/python.exe -m pytest services/workbench/tests -q` 为 57 passed；`npm --prefix apps/desktop run contracts:types:check` 通过。后端安装/验收脚本和含空格路径全新环境均已验证，独立审查发现的两项 P2 已修复；代码保留在工作区，未自动提交。
+- 桌面脚手架：提交 `0d77993`、`ede04f2`；`npm --prefix apps/desktop run typecheck` 通过；`npm --prefix apps/desktop run package` 通过；Playwright `@shell|@unit|@nav` 14/14 通过；T004 完成共用导航/首页壳；产物在 `apps/desktop/out/ZhixuWorkbench-win32-x64`。
+- 本地服务：T002 完成 RPC/CLI/契约，历史基线 57 passed，已按要求推送；T003 新增 SQLite/草稿 RPC，最终 `scripts/verify-backend.ps1` 为 87 passed，pip check、compileall、schema/TypeScript 漂移和类型检查通过。wheel 在带空格临时目录独立安装后保存/EOF 提交/重开重放通过，迁移 SQL 为 LF。独立审查的行尾 P2 已修复并复审；T003 工作区未自动提交/推送。
 - 前端实施记录：[frontend-scaffold.md](frontend-scaffold.md)。后端实施记录：[backend-scaffold.md](backend-scaffold.md)。
 - 未核验：安装包内服务启动、无 Python/Node 环境运行、真实 DeepSeek/ASR、M1 业务流。
 
@@ -44,16 +44,18 @@
 |---|---|---|---|---|---|
 | T001 | 桌面脚手架（前端部分） | 开发任务 / M1 | 已完成 | 2026-10-18 | [T001-2026-10-18-desktop-scaffold.md](tasks/T001-2026-10-18-desktop-scaffold.md) |
 | T002 | 后端脚手架 | 开发任务 / M1 | 已完成 | 2026-10-18 | [T002-2026-10-18-backend-scaffold.md](tasks/T002-2026-10-18-backend-scaffold.md) |
+| T003 | SQLite、幂等写与迁移备份 | 后端开发 / M1 Task 02 | 已完成 | 2026-10-18 | [T003-2026-10-18-backend-storage.md](tasks/T003-2026-10-18-backend-storage.md) |
+| T004 | 共用导航与首页壳（前端部分） | 开发任务 / M1 | 已完成 | 2026-10-18 | [T004-2026-10-18-shared-navigation-shell.md](tasks/T004-2026-10-18-shared-navigation-shell.md) |
 
-当前焦点：T001、T002 已完成，后端 57/57、集成测试 9/9 通过。下一任务应建立“M1 服务打包与安装验收”，完成 PyInstaller 服务包、安装包内握手与无运行时环境验证；之后进入 M1 Task 02～09 的真实建题业务流。
+当前焦点：T003 后端存储已完成，后端 87/87；T004 共用导航/首页壳已完成，全量前端 14/14，schema=1 握手通过。下一后端工作是 M1 Task 03；草稿目前仅开放 local 后端入口，前端持久化尚未接入，业务 owner 需在实体实现后校验归属。服务打包仍是 M1 门禁缺口。
 
 ## 5. 缺口、依赖与范围变化
 
 | 编号 | 事项与影响 | 关联任务 / 阶段 | 当前处理与恢复条件 |
 |---|---|---|---|
 | G01 | 安装包缺少本地服务：未安装 PyInstaller，`services/workbench/dist/workbench-service` 不存在；`build.ps1 -Stage M1` 会按设计失败 | M1 / 下一打包任务 | 在 `.venv` 安装 PyInstaller，生成 onedir 服务包，再执行严格构建与打包后握手 |
-| G02 | 后端与契约文件尚未提交：`services/`、`scripts/*-backend`、`contracts/` 在当前工作区未跟踪 | 后端工作流 | 本次未自动提交；用户决定代码审阅与提交时机，不影响已验证的实现状态 |
-| G03 | M1 业务流未开始：资料版本、DeepSeek 配置、候选校验、题库事务与导出仍是 M1 Task 02～09 | M1 | 在打包验收后按 M1 计划顺序实施 |
+| G02 | 后端脚手架与契约已提交推送，原提交缺口已解除 | T002 | 2026-10-18 按用户要求推送 main，远程提交 8ee582a；不表示后续开发自动推送 |
+| G03 | M1 业务流未开始：Task 02 存储已完成；队列、资料版本、DeepSeek 配置、候选校验、题库事务与导出仍属 Task 03～09；T004 导航壳已完成，前端持久化与业务接口待接入 | M1 | 按 M1 Task 03～09 顺序实施；前端接续真实 RPC，不提前伪造业务数据 |
 | G04 | Windows Job Object 子进程树管理未实现；当前使用 `taskkill /T` 并等待退出 | M1 / 打包阶段 | 在发行包任务中补齐并做异常退出验证 |
 | G05 | 真实 DeepSeek/ASR 未配置、未验证；当前只有替身与本地协议证据 | M1/M3 | 配置用户自己的服务后执行真实样本；缺账号时保留受阻状态 |
 
@@ -65,4 +67,4 @@
 
 | 日期 | 当日涉及任务 | 产出与主线结论 | 遗留与下一步 |
 |---|---|---|---|
-| 2026-10-18 | [T001](tasks/T001-2026-10-18-desktop-scaffold.md)、[T002](tasks/T002-2026-10-18-backend-scaffold.md) | 桌面脚手架完成：TypeScript 检查通过、Windows 桌面包构建通过、Playwright 9/9；后端脚手架完成：57/57 pytest、哈希安装与含空格干净环境验证通过，两项审查问题已修复，契约类型检查通过；M1 业务流未开始 | 下一任务：M1 服务打包与安装验收（PyInstaller、安装包握手）；随后 M1 Task 02～09 |
+| 2026-10-18 | [T001](tasks/T001-2026-10-18-desktop-scaffold.md)、[T002](tasks/T002-2026-10-18-backend-scaffold.md)、[T003](tasks/T003-2026-10-18-backend-storage.md)、[T004](tasks/T004-2026-10-18-shared-navigation-shell.md) | 桌面脚手架完成：TypeScript 检查通过、Windows 桌面包构建通过、全量前端 Playwright 14/14；后端脚手架完成：57/57 pytest、哈希安装与含空格干净环境验证通过，两项审查问题已修复，契约类型检查通过；T003 后端存储完成：87/87 全量后端、schema=1 握手、独立 wheel 安装/重开通过，审查 P2 已修复；T004 共用导航与首页壳完成：侧栏、路由、空态、草稿/模块保持与焦点管理，新增 `@nav` 5/5；M1 业务流未开始 | 下一后端任务：M1 Task 03 队列/事件/取消/恢复；G01 服务打包与安装验收、前端草稿和业务联调继续保留 |

@@ -1,4 +1,4 @@
-"""Local stdio service; no sockets, database, or external providers."""
+"""Local stdio service with durable SQLite storage; no listening sockets."""
 import argparse
 import asyncio
 from concurrent.futures import CancelledError
@@ -12,6 +12,8 @@ import uuid
 
 from workbench.contracts import DomainError, InitializeResult, PingResult, ShutdownResult
 from workbench.rpc import JsonLineDecoder, RpcRouter, encode_frame, error_response, run_sync
+
+from workbench.storage import Storage, get_draft, save_draft
 
 logger = logging.getLogger("workbench")
 
@@ -27,7 +29,15 @@ def configure_logging(data_dir: Path) -> None:
     logger.propagate = False
 
 
-async def serve() -> None:
+async def serve(data_dir: Path) -> None:
+    store = await Storage.open(data_dir / "data" / "workbench.sqlite3")
+    try:
+        await run_service(store)
+    finally:
+        await store.close()
+
+
+async def run_service(store: Storage) -> None:
     loop = asyncio.get_running_loop()
     incoming = asyncio.Queue(maxsize=16)
     outgoing = asyncio.Queue(maxsize=64)
@@ -38,10 +48,10 @@ async def serve() -> None:
     decoder = JsonLineDecoder()
     instance_id = str(uuid.uuid4())
     shutdown_requested = False
-    methods = ["system.initialize", "system.ping", "system.shutdown"]
+    methods = ["system.initialize", "system.ping", "system.shutdown", "drafts.save", "drafts.get"]
 
     async def initialize():
-        return InitializeResult(service_instance_id=instance_id, capabilities=methods).model_dump()
+        return InitializeResult(schema_version=store.schema_version, service_instance_id=instance_id, capabilities=methods).model_dump()
 
     async def ping():
         return PingResult(service_instance_id=instance_id).model_dump()
@@ -51,6 +61,14 @@ async def serve() -> None:
         shutdown_requested = True
         return ShutdownResult().model_dump()
 
+    async def drafts_save(**command):
+        return await save_draft(command, store)
+
+    async def drafts_get(**command):
+        return await get_draft(command, store)
+
+    router.register("drafts.save", drafts_save)
+    router.register("drafts.get", drafts_get)
     router.register("system.initialize", initialize)
     router.register("system.ping", ping)
     router.register("system.shutdown", shutdown)
@@ -183,7 +201,7 @@ async def serve() -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Zhixu local stdio JSON-RPC service")
     parser.add_argument("--data-dir", type=Path, required=True,
-                        help="Application data directory (logs only in this scaffold)")
+                        help="Application data directory (SQLite database, migration backups, and logs)")
     args = parser.parse_args()
     try:
         configure_logging(args.data_dir)
@@ -191,7 +209,7 @@ def main() -> int:
         print("Unable to start backend", file=sys.stderr)
         return 1
     try:
-        asyncio.run(serve())
+        asyncio.run(serve(args.data_dir))
         return 0
     except (BrokenPipeError, ConnectionResetError):
         logger.info("Parent pipe closed")
