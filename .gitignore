@@ -10,6 +10,12 @@ node_modules/
 build/
 dist/
 output/
+apps/desktop/.vite/
+apps/desktop/out/
+apps/desktop/test-results/
+apps/desktop/playwright-report/
+services/workbench/dist/
+services/workbench/build/
 analysis/
 prototypes/**/output/
 .env

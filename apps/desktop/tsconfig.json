@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    "target": "ES2023",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+    "forceConsistentCasingInFileNames": true,
+    "types": ["node"],
+    "paths": {
+      "@contracts/*": ["../../contracts/*"],
+      "@shared/*": ["./src/shared/*"],
+      "@playwright/test": ["./node_modules/@playwright/test"]
+    }
+  },
+  "include": [
+    "src",
+    "*.ts",
+    "../../tests/e2e/**/*.ts"
+  ]
+}
