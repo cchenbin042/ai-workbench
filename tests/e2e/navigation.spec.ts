@@ -21,10 +21,8 @@ test('@nav exposes the shared sidebar and updates the active page', async () => 
       'aria-current',
       'page',
     );
-    await expect(workbench.page.getByText('本页将在 M1 Task 04 接入')).toBeVisible();
-    await expect(
-      workbench.page.getByRole('main').getByText('尚未连接工作区'),
-    ).toBeVisible();
+    await expect(workbench.page.getByTestId('workspace-panel')).toBeVisible();
+    await expect(workbench.page.getByTestId('workspace-panel')).toContainText('尚未创建空间');
   } finally {
     await workbench.close();
   }

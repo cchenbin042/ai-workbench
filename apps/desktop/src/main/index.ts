@@ -5,6 +5,7 @@ import { app, BrowserWindow, protocol, session } from 'electron';
 
 import { originOf } from '../shared/ipc-policy';
 import { registerBridge } from './bridge';
+import { registerDialogs } from './dialogs';
 import { WorkbenchService, type ServiceOptions } from './service-process';
 
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined;
@@ -58,6 +59,7 @@ const mimeTypes: Record<string, string> = {
 let mainWindow: BrowserWindow | null = null;
 let service: WorkbenchService | null = null;
 let disposeBridge: (() => void) | null = null;
+let disposeDialogs: (() => void) | null = null;
 let quitting = false;
 
 protocol.registerSchemesAsPrivileged([
@@ -189,6 +191,12 @@ async function startService(window: BrowserWindow): Promise<void> {
     service,
     trustedOrigins: trustedOrigins(),
   });
+  disposeDialogs?.();
+  disposeDialogs = registerDialogs({
+    window,
+    service,
+    trustedOrigins: trustedOrigins(),
+  });
 
   try {
     await service.start();
@@ -200,6 +208,8 @@ async function startService(window: BrowserWindow): Promise<void> {
 async function shutdown(): Promise<void> {
   disposeBridge?.();
   disposeBridge = null;
+  disposeDialogs?.();
+  disposeDialogs = null;
   await service?.stop();
   service = null;
 }
@@ -235,6 +245,12 @@ if (!gotSingleInstanceLock) {
       }
       disposeBridge?.();
       disposeBridge = registerBridge({
+        window: mainWindow,
+        service,
+        trustedOrigins: trustedOrigins(),
+      });
+      disposeDialogs?.();
+      disposeDialogs = registerDialogs({
         window: mainWindow,
         service,
         trustedOrigins: trustedOrigins(),

@@ -6,6 +6,10 @@
 
 ## 当前交付
 
+新接手的智能体建议先读 [项目接手指南](docs/development/agent-onboarding.md)，再核对 [开发任务总览](docs/development/master-plan.md) 和当前任务明细。指南包含代码入口、实现边界、运行检查、验证证据与接续建议，整理快照为 2026-10-25；动态进度以最新台账及代码为准。
+
+产品评审：[Claude Code / OpenCode 联合 PRD 优化方案](docs/product/2026-10-19-prd-optimization-proposal.md)已保存，包含两轮讨论、共识与分歧、条款建议及验收补充；属于待采纳建议，尚未替换 PRD 或变更实施计划。
+
 | 文件 | 用途 |
 | --- | --- |
 | [PRD v1.0](docs/product/prd-ai-workbench-v1.md) | 用户问题、首版范围、默认、11 项需求、数据/状态、24 项正式验收和里程碑 |
@@ -56,7 +60,7 @@ python -m http.server 8765 --bind 127.0.0.1 --directory 'D:\llm\agent\ai-workben
 - 报告示例：`http://127.0.0.1:8765/?view=report-example`
 - 复习清单：`http://127.0.0.1:8765/?view=review`
 
-原型资源来自本机；题库、笔记、回答及成果使用浏览器 localStorage。题目生成、追问、反馈、语音及 MCP 均为演示，未接入模型或外部工具，未读取真实学习项目。正式版的 SQLite、系统密钥、安全范围和恢复机制仍需实现。
+原型资源来自本机；题库、笔记、回答及成果使用浏览器 localStorage。题目生成、追问、反馈、语音及 MCP 均为演示，未接入模型或外部工具，未读取真实学习项目。正式版 SQLite、后端草稿与任务恢复、工作区与真实资料安全范围（目录授权、来源快照、路径校验）已实现；前端持久化接入、系统密钥与 DeepSeek 接入仍待实现。
 
 ## 验证与参考
 
@@ -67,4 +71,4 @@ python -m http.server 8765 --bind 127.0.0.1 --directory 'D:\llm\agent\ai-workben
 - [WorkBuddy 5.8.3 分析报告](analysis/workbuddy-5.8.3/README.md)
 - [深造播放器课程输入测试](analysis/szplayer-input-probe/README.md)
 
-课程短片段音频已验证，播放器窗口画面仍为黑屏；不把原视频恢复或音画同步计为已解决。技术方案及其[文档检查记录](docs/technical/technical-design-verification.json)已提供，后续先按方案验证最小桌面包与本地通信，再完成 PRD 的 M1：真实资料 → DeepSeek 候选题 → 本地题库这条可用流程。真实模型、语音、MCP 和发行包测试仍待工程实现。
+课程短片段音频已验证，播放器窗口画面仍为黑屏；不把原视频恢复或音画同步计为已解决。技术方案及其[文档检查记录](docs/technical/technical-design-verification.json)已提供，最小桌面壳与本地通信已有验证记录；接续完成服务发行包与 PRD 的 M1：真实资料 → DeepSeek 候选题 → 本地题库这条可用流程。真实模型、语音、MCP 和发行包测试仍待工程实现。

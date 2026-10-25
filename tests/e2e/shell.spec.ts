@@ -76,18 +76,18 @@ test('@shell rejects path traversal on the app protocol', async () => {
 test('@shell reaches the local service and rejects non-public methods', async () => {
   await expect(page.locator('[data-testid="service-status"]')).toHaveText('已连接');
   await expect(page.locator('[data-testid="service-protocol"]')).toHaveText('1');
-  await expect(page.locator('[data-testid="service-schema"]')).toHaveText('2');
+  await expect(page.locator('[data-testid="service-schema"]')).toHaveText('3');
 
   const status = await page.evaluate(() => window.workbench.getStatus());
   expect(status.state).toBe('connected');
   expect(status.protocolVersion).toBe(1);
-  expect(status.schemaVersion).toBe(2);
+  expect(status.schemaVersion).toBe(3);
   expect(await page.evaluate(() => typeof window.workbench.restartService)).toBe('function');
 
   const ping = await page.evaluate(() => window.workbench.call('system.ping', {}));
   expect((ping as { ok: boolean }).ok).toBe(true);
 
-  for (const method of ['system.shutdown', 'system.initialize', 'materials.list']) {
+  for (const method of ['system.shutdown', 'system.initialize', 'internal.registerGrant']) {
     const rejected = await page.evaluate(async (blockedMethod) => {
       const call = window.workbench.call as unknown as (
         name: string,

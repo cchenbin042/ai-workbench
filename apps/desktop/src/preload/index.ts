@@ -4,6 +4,7 @@ import {
   PUBLIC_RPC_METHODS,
   type BridgeEvent,
   type PublicRpcMethod,
+  type SelectionGrant,
   type WorkbenchBridge,
 } from '../shared/bridge';
 
@@ -37,6 +38,14 @@ const bridge: WorkbenchBridge = {
     return () => {
       ipcRenderer.removeListener('workbench:event', handler);
     };
+  },
+
+  async chooseDirectory() {
+    return ipcRenderer.invoke('workbench:choose-directory') as Promise<SelectionGrant | null>;
+  },
+
+  async chooseFiles() {
+    return ipcRenderer.invoke('workbench:choose-files') as Promise<SelectionGrant | null>;
   },
 
   runtime: {

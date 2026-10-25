@@ -1,5 +1,38 @@
 {
   "$defs": {
+    "CheckFreshnessCommand": {
+      "additionalProperties": false,
+      "properties": {
+        "workspace_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Workspace Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "workspace_id"
+      ],
+      "title": "CheckFreshnessCommand",
+      "type": "object"
+    },
+    "CheckFreshnessResult": {
+      "additionalProperties": false,
+      "properties": {
+        "items": {
+          "items": {
+            "$ref": "#/$defs/FreshnessItem"
+          },
+          "title": "Items",
+          "type": "array"
+        }
+      },
+      "required": [
+        "items"
+      ],
+      "title": "CheckFreshnessResult",
+      "type": "object"
+    },
     "CommandMeta": {
       "additionalProperties": false,
       "properties": {
@@ -147,6 +180,148 @@
       "title": "CreateTaskCommand",
       "type": "object"
     },
+    "CreateWorkspaceCommand": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "maxLength": 100,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "operation_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Operation Id",
+          "type": "string"
+        },
+        "role_tags": {
+          "items": {
+            "maxLength": 32,
+            "minLength": 1,
+            "type": "string"
+          },
+          "maxItems": 8,
+          "title": "Role Tags",
+          "type": "array"
+        }
+      },
+      "required": [
+        "operation_id",
+        "name"
+      ],
+      "title": "CreateWorkspaceCommand",
+      "type": "object"
+    },
+    "DirectoryEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "modified_at": {
+          "minLength": 1,
+          "title": "Modified At",
+          "type": "string"
+        },
+        "relative_path": {
+          "minLength": 1,
+          "title": "Relative Path",
+          "type": "string"
+        },
+        "size_bytes": {
+          "minimum": 0,
+          "title": "Size Bytes",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "relative_path",
+        "size_bytes",
+        "modified_at"
+      ],
+      "title": "DirectoryEntry",
+      "type": "object"
+    },
+    "DirectoryLinkResult": {
+      "additionalProperties": false,
+      "properties": {
+        "canonical_root": {
+          "minLength": 1,
+          "title": "Canonical Root",
+          "type": "string"
+        },
+        "link_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Link Id",
+          "type": "string"
+        },
+        "linked_at": {
+          "minLength": 1,
+          "title": "Linked At",
+          "type": "string"
+        },
+        "removed_at": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Removed At"
+        },
+        "workspace_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Workspace Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "link_id",
+        "workspace_id",
+        "canonical_root",
+        "linked_at",
+        "removed_at"
+      ],
+      "title": "DirectoryLinkResult",
+      "type": "object"
+    },
+    "DirectoryListingResult": {
+      "additionalProperties": false,
+      "properties": {
+        "canonical_root": {
+          "minLength": 1,
+          "title": "Canonical Root",
+          "type": "string"
+        },
+        "entries": {
+          "items": {
+            "$ref": "#/$defs/DirectoryEntry"
+          },
+          "title": "Entries",
+          "type": "array"
+        },
+        "link_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Link Id",
+          "type": "string"
+        },
+        "truncated": {
+          "title": "Truncated",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "link_id",
+        "canonical_root",
+        "entries",
+        "truncated"
+      ],
+      "title": "DirectoryListingResult",
+      "type": "object"
+    },
     "DomainErrorData": {
       "additionalProperties": false,
       "properties": {
@@ -231,6 +406,90 @@
       "title": "DraftResult",
       "type": "object"
     },
+    "FreshnessItem": {
+      "additionalProperties": false,
+      "properties": {
+        "link_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Link Id"
+        },
+        "link_removed": {
+          "title": "Link Removed",
+          "type": "boolean"
+        },
+        "material_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Material Id",
+          "type": "string"
+        },
+        "observed_size": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Observed Size"
+        },
+        "source_path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Source Path"
+        },
+        "status": {
+          "enum": [
+            "current",
+            "changed",
+            "missing",
+            "snapshot_only"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "stored_size": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Stored Size"
+        }
+      },
+      "required": [
+        "material_id",
+        "status",
+        "source_path",
+        "link_id",
+        "link_removed",
+        "stored_size",
+        "observed_size"
+      ],
+      "title": "FreshnessItem",
+      "type": "object"
+    },
     "GetDraftCommand": {
       "additionalProperties": false,
       "properties": {
@@ -257,6 +516,36 @@
         "owner_id"
       ],
       "title": "GetDraftCommand",
+      "type": "object"
+    },
+    "GetMaterialCommand": {
+      "additionalProperties": false,
+      "properties": {
+        "material_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Material Id",
+          "type": "string"
+        },
+        "workspace_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Workspace Id"
+        }
+      },
+      "required": [
+        "material_id"
+      ],
+      "title": "GetMaterialCommand",
       "type": "object"
     },
     "GetOperationCommand": {
@@ -303,6 +592,209 @@
       "title": "GetTaskCommand",
       "type": "object"
     },
+    "GrantResult": {
+      "additionalProperties": false,
+      "properties": {
+        "expires_at": {
+          "minLength": 1,
+          "title": "Expires At",
+          "type": "string"
+        },
+        "files": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Files",
+          "type": "array"
+        },
+        "grant_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Grant Id",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "directory",
+            "files"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "root": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Root"
+        }
+      },
+      "required": [
+        "grant_id",
+        "kind",
+        "expires_at"
+      ],
+      "title": "GrantResult",
+      "type": "object"
+    },
+    "ImportEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "encoding": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Encoding"
+        },
+        "relative_path": {
+          "maxLength": 512,
+          "minLength": 1,
+          "title": "Relative Path",
+          "type": "string"
+        }
+      },
+      "required": [
+        "relative_path"
+      ],
+      "title": "ImportEntry",
+      "type": "object"
+    },
+    "ImportFilesCommand": {
+      "additionalProperties": false,
+      "properties": {
+        "entries": {
+          "items": {
+            "$ref": "#/$defs/ImportEntry"
+          },
+          "maxItems": 64,
+          "title": "Entries",
+          "type": "array"
+        },
+        "grant_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Grant Id"
+        },
+        "link_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Link Id"
+        },
+        "operation_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Operation Id",
+          "type": "string"
+        },
+        "workspace_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Workspace Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "operation_id",
+        "workspace_id"
+      ],
+      "title": "ImportFilesCommand",
+      "type": "object"
+    },
+    "ImportResult": {
+      "additionalProperties": false,
+      "properties": {
+        "materials": {
+          "items": {
+            "$ref": "#/$defs/MaterialDetail"
+          },
+          "title": "Materials",
+          "type": "array"
+        },
+        "total_bytes": {
+          "minimum": 0,
+          "title": "Total Bytes",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "materials",
+        "total_bytes"
+      ],
+      "title": "ImportResult",
+      "type": "object"
+    },
+    "ImportTextCommand": {
+      "additionalProperties": false,
+      "properties": {
+        "content_text": {
+          "title": "Content Text",
+          "type": "string"
+        },
+        "display_name": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Display Name",
+          "type": "string"
+        },
+        "operation_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Operation Id",
+          "type": "string"
+        },
+        "workspace_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Workspace Id"
+        }
+      },
+      "required": [
+        "operation_id",
+        "display_name",
+        "content_text"
+      ],
+      "title": "ImportTextCommand",
+      "type": "object"
+    },
     "InitializeResult": {
       "additionalProperties": false,
       "properties": {
@@ -339,6 +831,75 @@
       "type": "object"
     },
     "JsonValue": {},
+    "LinkDirectoryCommand": {
+      "additionalProperties": false,
+      "properties": {
+        "grant_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Grant Id",
+          "type": "string"
+        },
+        "operation_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Operation Id",
+          "type": "string"
+        },
+        "workspace_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Workspace Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "operation_id",
+        "workspace_id",
+        "grant_id"
+      ],
+      "title": "LinkDirectoryCommand",
+      "type": "object"
+    },
+    "ListDirectoryCommand": {
+      "additionalProperties": false,
+      "properties": {
+        "link_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Link Id",
+          "type": "string"
+        },
+        "workspace_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Workspace Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "workspace_id",
+        "link_id"
+      ],
+      "title": "ListDirectoryCommand",
+      "type": "object"
+    },
+    "ListDirectoryLinksCommand": {
+      "additionalProperties": false,
+      "properties": {
+        "workspace_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Workspace Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "workspace_id"
+      ],
+      "title": "ListDirectoryLinksCommand",
+      "type": "object"
+    },
     "ListEventsCommand": {
       "additionalProperties": false,
       "properties": {
@@ -372,6 +933,22 @@
         "task_id"
       ],
       "title": "ListEventsCommand",
+      "type": "object"
+    },
+    "ListMaterialsCommand": {
+      "additionalProperties": false,
+      "properties": {
+        "workspace_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Workspace Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "workspace_id"
+      ],
+      "title": "ListMaterialsCommand",
       "type": "object"
     },
     "ListTasksCommand": {
@@ -421,6 +998,239 @@
         }
       },
       "title": "ListTasksCommand",
+      "type": "object"
+    },
+    "MaterialDetail": {
+      "additionalProperties": false,
+      "properties": {
+        "byte_size": {
+          "minimum": 0,
+          "title": "Byte Size",
+          "type": "integer"
+        },
+        "content_text": {
+          "title": "Content Text",
+          "type": "string"
+        },
+        "current_version": {
+          "$ref": "#/$defs/MaterialVersionSummary"
+        },
+        "display_name": {
+          "minLength": 1,
+          "title": "Display Name",
+          "type": "string"
+        },
+        "encoding": {
+          "minLength": 1,
+          "title": "Encoding",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "file",
+            "text"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "line_count": {
+          "minimum": 0,
+          "title": "Line Count",
+          "type": "integer"
+        },
+        "material_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Material Id",
+          "type": "string"
+        },
+        "read_at": {
+          "minLength": 1,
+          "title": "Read At",
+          "type": "string"
+        },
+        "sha256": {
+          "minLength": 1,
+          "title": "Sha256",
+          "type": "string"
+        },
+        "source": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Source",
+          "type": "object"
+        },
+        "source_path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Source Path"
+        },
+        "version_no": {
+          "exclusiveMinimum": 0,
+          "title": "Version No",
+          "type": "integer"
+        },
+        "workspace_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Workspace Id"
+        }
+      },
+      "required": [
+        "material_id",
+        "workspace_id",
+        "kind",
+        "display_name",
+        "current_version",
+        "source_path",
+        "content_text",
+        "sha256",
+        "byte_size",
+        "encoding",
+        "line_count",
+        "version_no",
+        "read_at",
+        "source"
+      ],
+      "title": "MaterialDetail",
+      "type": "object"
+    },
+    "MaterialListResult": {
+      "additionalProperties": false,
+      "properties": {
+        "items": {
+          "items": {
+            "$ref": "#/$defs/MaterialSummary"
+          },
+          "title": "Items",
+          "type": "array"
+        }
+      },
+      "required": [
+        "items"
+      ],
+      "title": "MaterialListResult",
+      "type": "object"
+    },
+    "MaterialSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "current_version": {
+          "$ref": "#/$defs/MaterialVersionSummary"
+        },
+        "display_name": {
+          "minLength": 1,
+          "title": "Display Name",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "file",
+            "text"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "material_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Material Id",
+          "type": "string"
+        },
+        "source_path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Source Path"
+        },
+        "workspace_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Workspace Id"
+        }
+      },
+      "required": [
+        "material_id",
+        "workspace_id",
+        "kind",
+        "display_name",
+        "current_version",
+        "source_path"
+      ],
+      "title": "MaterialSummary",
+      "type": "object"
+    },
+    "MaterialVersionSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "byte_size": {
+          "minimum": 0,
+          "title": "Byte Size",
+          "type": "integer"
+        },
+        "encoding": {
+          "minLength": 1,
+          "title": "Encoding",
+          "type": "string"
+        },
+        "line_count": {
+          "minimum": 0,
+          "title": "Line Count",
+          "type": "integer"
+        },
+        "read_at": {
+          "minLength": 1,
+          "title": "Read At",
+          "type": "string"
+        },
+        "sha256": {
+          "minLength": 1,
+          "title": "Sha256",
+          "type": "string"
+        },
+        "version_no": {
+          "exclusiveMinimum": 0,
+          "title": "Version No",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "version_no",
+        "sha256",
+        "byte_size",
+        "encoding",
+        "line_count",
+        "read_at"
+      ],
+      "title": "MaterialVersionSummary",
       "type": "object"
     },
     "ModelMessage": {
@@ -553,6 +1363,112 @@
         "service_instance_id"
       ],
       "title": "PingResult",
+      "type": "object"
+    },
+    "PreviewFileCommand": {
+      "additionalProperties": false,
+      "properties": {
+        "link_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Link Id",
+          "type": "string"
+        },
+        "relative_path": {
+          "maxLength": 512,
+          "minLength": 1,
+          "title": "Relative Path",
+          "type": "string"
+        },
+        "workspace_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Workspace Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "workspace_id",
+        "link_id",
+        "relative_path"
+      ],
+      "title": "PreviewFileCommand",
+      "type": "object"
+    },
+    "PreviewResult": {
+      "additionalProperties": false,
+      "properties": {
+        "byte_size": {
+          "minimum": 0,
+          "title": "Byte Size",
+          "type": "integer"
+        },
+        "content_text": {
+          "title": "Content Text",
+          "type": "string"
+        },
+        "encoding": {
+          "minLength": 1,
+          "title": "Encoding",
+          "type": "string"
+        },
+        "line_count": {
+          "minimum": 0,
+          "title": "Line Count",
+          "type": "integer"
+        },
+        "sha256": {
+          "minLength": 1,
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "content_text",
+        "sha256",
+        "encoding",
+        "byte_size",
+        "line_count"
+      ],
+      "title": "PreviewResult",
+      "type": "object"
+    },
+    "RegisterGrantCommand": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "directory",
+            "files"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Path"
+        },
+        "paths": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 64,
+          "title": "Paths",
+          "type": "array"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "RegisterGrantCommand",
       "type": "object"
     },
     "RpcError": {
@@ -1055,11 +1971,126 @@
       ],
       "title": "TaskWriteCommand",
       "type": "object"
+    },
+    "UnlinkDirectoryCommand": {
+      "additionalProperties": false,
+      "properties": {
+        "link_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Link Id",
+          "type": "string"
+        },
+        "operation_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Operation Id",
+          "type": "string"
+        },
+        "workspace_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Workspace Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "operation_id",
+        "workspace_id",
+        "link_id"
+      ],
+      "title": "UnlinkDirectoryCommand",
+      "type": "object"
+    },
+    "WorkspaceListResult": {
+      "additionalProperties": false,
+      "properties": {
+        "items": {
+          "items": {
+            "$ref": "#/$defs/WorkspaceResult"
+          },
+          "title": "Items",
+          "type": "array"
+        }
+      },
+      "required": [
+        "items"
+      ],
+      "title": "WorkspaceListResult",
+      "type": "object"
+    },
+    "WorkspaceResult": {
+      "additionalProperties": false,
+      "properties": {
+        "archived_at": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Archived At"
+        },
+        "created_at": {
+          "minLength": 1,
+          "title": "Created At",
+          "type": "string"
+        },
+        "name": {
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "revision": {
+          "exclusiveMinimum": 0,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "role_tags": {
+          "items": {
+            "maxLength": 32,
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Role Tags",
+          "type": "array"
+        },
+        "updated_at": {
+          "minLength": 1,
+          "title": "Updated At",
+          "type": "string"
+        },
+        "workspace_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Workspace Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "workspace_id",
+        "name",
+        "role_tags",
+        "revision",
+        "archived_at",
+        "created_at",
+        "updated_at"
+      ],
+      "title": "WorkspaceResult",
+      "type": "object"
     }
   },
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "properties": {
+    "check_freshness_command": {
+      "$ref": "#/$defs/CheckFreshnessCommand"
+    },
+    "check_freshness_result": {
+      "$ref": "#/$defs/CheckFreshnessResult"
+    },
     "command_meta": {
       "$ref": "#/$defs/CommandMeta"
     },
@@ -1069,11 +2100,29 @@
     "create_task_command": {
       "$ref": "#/$defs/CreateTaskCommand"
     },
+    "create_workspace_command": {
+      "$ref": "#/$defs/CreateWorkspaceCommand"
+    },
+    "directory_entry": {
+      "$ref": "#/$defs/DirectoryEntry"
+    },
+    "directory_link": {
+      "$ref": "#/$defs/DirectoryLinkResult"
+    },
+    "directory_listing": {
+      "$ref": "#/$defs/DirectoryListingResult"
+    },
     "draft": {
       "$ref": "#/$defs/DraftResult"
     },
+    "freshness_item": {
+      "$ref": "#/$defs/FreshnessItem"
+    },
     "get_draft_command": {
       "$ref": "#/$defs/GetDraftCommand"
+    },
+    "get_material_command": {
+      "$ref": "#/$defs/GetMaterialCommand"
     },
     "get_operation_command": {
       "$ref": "#/$defs/GetOperationCommand"
@@ -1081,14 +2130,53 @@
     "get_task_command": {
       "$ref": "#/$defs/GetTaskCommand"
     },
+    "grant_result": {
+      "$ref": "#/$defs/GrantResult"
+    },
+    "import_entry": {
+      "$ref": "#/$defs/ImportEntry"
+    },
+    "import_files_command": {
+      "$ref": "#/$defs/ImportFilesCommand"
+    },
+    "import_result": {
+      "$ref": "#/$defs/ImportResult"
+    },
+    "import_text_command": {
+      "$ref": "#/$defs/ImportTextCommand"
+    },
     "initialize": {
       "$ref": "#/$defs/InitializeResult"
+    },
+    "link_directory_command": {
+      "$ref": "#/$defs/LinkDirectoryCommand"
+    },
+    "list_directory_command": {
+      "$ref": "#/$defs/ListDirectoryCommand"
+    },
+    "list_directory_links_command": {
+      "$ref": "#/$defs/ListDirectoryLinksCommand"
     },
     "list_events_command": {
       "$ref": "#/$defs/ListEventsCommand"
     },
+    "list_materials_command": {
+      "$ref": "#/$defs/ListMaterialsCommand"
+    },
     "list_tasks_command": {
       "$ref": "#/$defs/ListTasksCommand"
+    },
+    "material_detail": {
+      "$ref": "#/$defs/MaterialDetail"
+    },
+    "material_list": {
+      "$ref": "#/$defs/MaterialListResult"
+    },
+    "material_summary": {
+      "$ref": "#/$defs/MaterialSummary"
+    },
+    "material_version_summary": {
+      "$ref": "#/$defs/MaterialVersionSummary"
     },
     "model_request": {
       "$ref": "#/$defs/ModelRequest"
@@ -1098,6 +2186,15 @@
     },
     "ping": {
       "$ref": "#/$defs/PingResult"
+    },
+    "preview_file_command": {
+      "$ref": "#/$defs/PreviewFileCommand"
+    },
+    "preview_result": {
+      "$ref": "#/$defs/PreviewResult"
+    },
+    "register_grant_command": {
+      "$ref": "#/$defs/RegisterGrantCommand"
     },
     "request": {
       "$ref": "#/$defs/RpcRequest"
@@ -1130,6 +2227,15 @@
     },
     "task_write_command": {
       "$ref": "#/$defs/TaskWriteCommand"
+    },
+    "unlink_directory_command": {
+      "$ref": "#/$defs/UnlinkDirectoryCommand"
+    },
+    "workspace": {
+      "$ref": "#/$defs/WorkspaceResult"
+    },
+    "workspace_list": {
+      "$ref": "#/$defs/WorkspaceListResult"
     }
   },
   "required": [
@@ -1153,7 +2259,34 @@
     "response",
     "initialize",
     "ping",
-    "shutdown"
+    "shutdown",
+    "create_workspace_command",
+    "workspace",
+    "workspace_list",
+    "link_directory_command",
+    "unlink_directory_command",
+    "list_directory_links_command",
+    "directory_link",
+    "list_directory_command",
+    "directory_entry",
+    "directory_listing",
+    "import_entry",
+    "import_files_command",
+    "import_text_command",
+    "material_version_summary",
+    "material_summary",
+    "material_detail",
+    "material_list",
+    "list_materials_command",
+    "get_material_command",
+    "import_result",
+    "check_freshness_command",
+    "freshness_item",
+    "check_freshness_result",
+    "preview_file_command",
+    "preview_result",
+    "register_grant_command",
+    "grant_result"
   ],
   "title": "WorkbenchRpcContract",
   "type": "object"

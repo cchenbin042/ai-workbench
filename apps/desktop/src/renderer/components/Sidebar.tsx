@@ -55,9 +55,13 @@ export function Sidebar({ activePage, onNavigate }: SidebarProps) {
             空间 <span className="dim">(0)</span>
           </span>
         </div>
-        <p className="sidebar-empty">尚未连接工作区。目录关联将在 M1 Task 04 建立。</p>
-        <button type="button" className="text-link" disabled title="M1 Task 04 接入">
-          新建空间
+        <p className="sidebar-empty">工作区与目录关联在资料库页管理。</p>
+        <button
+          type="button"
+          className="text-link"
+          onClick={() => onNavigate('workspace')}
+        >
+          打开资料库 <Icon name="arrow" size={14} />
         </button>
       </div>
 

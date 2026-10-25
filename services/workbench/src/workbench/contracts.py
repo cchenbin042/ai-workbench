@@ -1,7 +1,8 @@
 """Validated public DTOs and deliberately safe RPC errors."""
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, JsonValue, StrictBool, StrictFloat, StrictInt, field_validator
+from pydantic import (BaseModel, ConfigDict, Field, JsonValue, StrictBool, StrictFloat,
+                      StrictInt, field_validator, model_validator)
 
 NonEmptyStr = Annotated[str, Field(min_length=1)]
 NonNegativeInt = Annotated[StrictInt, Field(ge=0)]
@@ -142,6 +143,192 @@ WaitingReason = Literal["review_candidates", "answer_question", "verify_transcri
                         "approve_tool", "review_artifact"]
 TaskType = Literal["generic", "question_generation", "interview"]
 ShortId = Annotated[str, Field(min_length=1, max_length=128)]
+WorkspaceName = Annotated[str, Field(min_length=1, max_length=100)]
+WorkspaceTag = Annotated[str, Field(min_length=1, max_length=32)]
+RelativePath = Annotated[str, Field(min_length=1, max_length=512)]
+
+
+class CreateWorkspaceCommand(Contract):
+    operation_id: ShortId
+    name: WorkspaceName
+    role_tags: Annotated[list[WorkspaceTag], Field(max_length=8)] = Field(default_factory=list)
+
+
+class WorkspaceResult(Contract):
+    workspace_id: ShortId
+    name: NonEmptyStr
+    role_tags: list[WorkspaceTag]
+    revision: Annotated[StrictInt, Field(gt=0)]
+    archived_at: str | None
+    created_at: NonEmptyStr
+    updated_at: NonEmptyStr
+
+
+class WorkspaceListResult(Contract):
+    items: list[WorkspaceResult]
+
+
+class LinkDirectoryCommand(Contract):
+    operation_id: ShortId
+    workspace_id: ShortId
+    grant_id: ShortId
+
+
+class UnlinkDirectoryCommand(Contract):
+    operation_id: ShortId
+    workspace_id: ShortId
+    link_id: ShortId
+
+
+class ListDirectoryLinksCommand(Contract):
+    workspace_id: ShortId
+
+
+class DirectoryLinkResult(Contract):
+    link_id: ShortId
+    workspace_id: ShortId
+    canonical_root: NonEmptyStr
+    linked_at: NonEmptyStr
+    removed_at: str | None
+
+
+class ListDirectoryCommand(Contract):
+    workspace_id: ShortId
+    link_id: ShortId
+
+
+class DirectoryEntry(Contract):
+    relative_path: NonEmptyStr
+    size_bytes: NonNegativeInt
+    modified_at: NonEmptyStr
+
+
+class DirectoryListingResult(Contract):
+    link_id: ShortId
+    canonical_root: NonEmptyStr
+    entries: list[DirectoryEntry]
+    truncated: StrictBool
+
+
+class ImportEntry(Contract):
+    relative_path: RelativePath
+    encoding: str | None = None
+
+
+class ImportFilesCommand(Contract):
+    operation_id: ShortId
+    workspace_id: ShortId
+    grant_id: ShortId | None = None
+    link_id: ShortId | None = None
+    entries: Annotated[list[ImportEntry], Field(max_length=64)] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def single_authorization(self):
+        if (self.grant_id is None) == (self.link_id is None):
+            raise ValueError("Provide exactly one of grant_id or link_id")
+        return self
+
+
+class ImportTextCommand(Contract):
+    operation_id: ShortId
+    workspace_id: ShortId | None = None
+    display_name: Annotated[str, Field(min_length=1, max_length=200)]
+    content_text: str
+
+
+class MaterialVersionSummary(Contract):
+    version_no: Annotated[StrictInt, Field(gt=0)]
+    sha256: NonEmptyStr
+    byte_size: NonNegativeInt
+    encoding: NonEmptyStr
+    line_count: NonNegativeInt
+    read_at: NonEmptyStr
+
+
+class MaterialSummary(Contract):
+    material_id: ShortId
+    workspace_id: ShortId | None
+    kind: Literal["file", "text"]
+    display_name: NonEmptyStr
+    current_version: MaterialVersionSummary
+    source_path: str | None
+
+
+class MaterialDetail(MaterialSummary):
+    content_text: str
+    sha256: NonEmptyStr
+    byte_size: NonNegativeInt
+    encoding: NonEmptyStr
+    line_count: NonNegativeInt
+    version_no: Annotated[StrictInt, Field(gt=0)]
+    read_at: NonEmptyStr
+    source: dict[str, JsonValue]
+
+
+class MaterialListResult(Contract):
+    items: list[MaterialSummary]
+
+
+class ListMaterialsCommand(Contract):
+    workspace_id: ShortId
+
+
+class GetMaterialCommand(Contract):
+    workspace_id: ShortId | None = None
+    material_id: ShortId
+
+
+class ImportResult(Contract):
+    materials: list[MaterialDetail]
+    total_bytes: NonNegativeInt
+
+
+class CheckFreshnessCommand(Contract):
+    workspace_id: ShortId
+
+
+class FreshnessItem(Contract):
+    material_id: ShortId
+    status: Literal["current", "changed", "missing", "snapshot_only"]
+    source_path: str | None
+    link_id: ShortId | None
+    link_removed: StrictBool
+    stored_size: NonNegativeInt | None
+    observed_size: NonNegativeInt | None
+
+
+class CheckFreshnessResult(Contract):
+    items: list[FreshnessItem]
+
+
+class PreviewFileCommand(Contract):
+    workspace_id: ShortId
+    link_id: ShortId
+    relative_path: RelativePath
+
+
+class PreviewResult(Contract):
+    content_text: str
+    sha256: NonEmptyStr
+    encoding: NonEmptyStr
+    byte_size: NonNegativeInt
+    line_count: NonNegativeInt
+
+
+class RegisterGrantCommand(Contract):
+    kind: Literal["directory", "files"]
+    path: str | None = None
+    paths: Annotated[list[str], Field(max_length=64)] = Field(default_factory=list)
+
+
+class GrantResult(Contract):
+    grant_id: ShortId
+    kind: Literal["directory", "files"]
+    expires_at: NonEmptyStr
+    root: str | None = None
+    files: list[NonEmptyStr] = Field(default_factory=list)
+
+
 
 
 class CreateTaskCommand(Contract):
@@ -250,3 +437,30 @@ class WorkbenchRpcContract(Contract):
     initialize: InitializeResult
     ping: PingResult
     shutdown: ShutdownResult
+    create_workspace_command: CreateWorkspaceCommand
+    workspace: WorkspaceResult
+    workspace_list: WorkspaceListResult
+    link_directory_command: LinkDirectoryCommand
+    unlink_directory_command: UnlinkDirectoryCommand
+    list_directory_links_command: ListDirectoryLinksCommand
+    directory_link: DirectoryLinkResult
+    list_directory_command: ListDirectoryCommand
+    directory_entry: DirectoryEntry
+    directory_listing: DirectoryListingResult
+    import_entry: ImportEntry
+    import_files_command: ImportFilesCommand
+    import_text_command: ImportTextCommand
+    material_version_summary: MaterialVersionSummary
+    material_summary: MaterialSummary
+    material_detail: MaterialDetail
+    material_list: MaterialListResult
+    list_materials_command: ListMaterialsCommand
+    get_material_command: GetMaterialCommand
+    import_result: ImportResult
+    check_freshness_command: CheckFreshnessCommand
+    freshness_item: FreshnessItem
+    check_freshness_result: CheckFreshnessResult
+    preview_file_command: PreviewFileCommand
+    preview_result: PreviewResult
+    register_grant_command: RegisterGrantCommand
+    grant_result: GrantResult

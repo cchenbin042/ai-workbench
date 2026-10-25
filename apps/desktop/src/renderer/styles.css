@@ -958,3 +958,129 @@ textarea:focus-visible {
     grid-template-columns: 1fr;
   }
 }
+
+/* 资料库（M1 Task 04）：空间、目录关联与来源快照 */
+.materials-error {
+  margin: 0 0 12px;
+  padding: 8px 12px;
+  border: 1px solid var(--danger);
+  border-radius: 8px;
+  color: var(--danger);
+}
+
+.materials-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.materials-card {
+  border: 1px solid var(--line-soft);
+  border-radius: 12px;
+  background: var(--panel);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.materials-card h2 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.materials-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.materials-row input[type="text"],
+.materials-row input:not([type]),
+.materials-card textarea {
+  flex: 1;
+  min-width: 0;
+  background: var(--panel-raised);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--text);
+  padding: 6px 10px;
+}
+
+.materials-card textarea {
+  resize: vertical;
+}
+
+.materials-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 260px;
+  overflow: auto;
+}
+
+.materials-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  padding: 6px 10px;
+  background: var(--panel-raised);
+}
+
+.materials-list li.dim {
+  border-style: dashed;
+  color: var(--muted-soft);
+  justify-content: center;
+}
+
+.materials-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  background: none;
+  border: none;
+  padding: 0;
+  color: inherit;
+  text-align: left;
+  flex: 1;
+  min-width: 0;
+}
+
+.materials-item.selected strong {
+  color: var(--accent);
+}
+
+.materials-item small,
+.materials-list small {
+  color: var(--muted-soft);
+}
+
+.materials-preview {
+  margin: 0;
+  padding: 10px 12px;
+  background: var(--panel-warm);
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  max-height: 220px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: var(--mono);
+  font-size: 12.5px;
+}
+
+@media (max-width: 1100px) {
+  .materials-grid {
+    grid-template-columns: 1fr;
+  }
+}

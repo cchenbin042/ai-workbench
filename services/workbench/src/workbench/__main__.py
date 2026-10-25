@@ -15,6 +15,8 @@ from workbench.contracts import (ContinueTaskCommand, DomainError, GetTaskComman
                                  ShutdownResult, TaskWriteCommand)
 from workbench.rpc import JsonLineDecoder, RpcRouter, encode_frame, error_response, run_sync
 
+from workbench import materials, workspaces
+from workbench.materials import GrantRegistry
 from workbench.storage import Storage, get_draft, save_draft, validate_command
 from workbench.tasks import TaskService
 
@@ -53,8 +55,14 @@ async def run_service(store: Storage) -> None:
     shutdown_requested = False
     methods = ["system.initialize", "system.ping", "system.shutdown", "drafts.save", "drafts.get",
                "tasks.get", "tasks.list", "tasks.cancel", "tasks.resume", "tasks.continue",
-               "events.list", "operations.get"]
+               "events.list", "operations.get",
+               "workspaces.create", "workspaces.list", "workspaces.listLinks",
+               "workspaces.linkDirectory",
+               "workspaces.unlinkDirectory", "materials.listDirectory", "materials.importFiles",
+               "materials.importText", "materials.list", "materials.get",
+               "materials.checkFreshness", "materials.previewFile"]
     tasks = TaskService(store, instance_id=instance_id)
+    grants = materials.GrantRegistry()
     await tasks.recover_startup()
 
     def publish(event):
@@ -109,6 +117,45 @@ async def run_service(store: Storage) -> None:
     async def operations_get(**command):
         return await tasks.get_operation(**command)
 
+    async def workspaces_create(**command):
+        return await workspaces.create_workspace(command, store)
+
+    async def workspaces_list():
+        return await workspaces.list_workspaces(store)
+
+    async def workspaces_list_links(**command):
+        return await workspaces.list_directory_links(command, store)
+
+    async def workspaces_link_directory(**command):
+        return await workspaces.link_directory(command, store, grants)
+
+    async def workspaces_unlink_directory(**command):
+        return await workspaces.unlink_directory(command, store)
+
+    async def materials_list_directory(**command):
+        return await materials.list_directory_files(command, store)
+
+    async def materials_import_files(**command):
+        return await materials.import_files(command, store, grants)
+
+    async def materials_import_text(**command):
+        return await materials.import_text(command, store)
+
+    async def materials_list(**command):
+        return await materials.list_materials(command, store)
+
+    async def materials_get(**command):
+        return await materials.get_material(command, store)
+
+    async def materials_check_freshness(**command):
+        return await materials.check_freshness(command, store)
+
+    async def materials_preview_file(**command):
+        return await materials.preview_file(command, store)
+
+    async def internal_register_grant(**command):
+        return materials.register_grant(grants, **command)
+
     router.register("tasks.get", tasks_get)
     router.register("tasks.list", tasks_list)
     router.register("tasks.cancel", tasks_cancel)
@@ -118,6 +165,20 @@ async def run_service(store: Storage) -> None:
     router.register("operations.get", operations_get)
     router.register("drafts.save", drafts_save)
     router.register("drafts.get", drafts_get)
+    router.register("workspaces.create", workspaces_create)
+    router.register("workspaces.list", workspaces_list)
+    router.register("workspaces.listLinks", workspaces_list_links)
+    router.register("workspaces.linkDirectory", workspaces_link_directory)
+    router.register("workspaces.unlinkDirectory", workspaces_unlink_directory)
+    router.register("materials.listDirectory", materials_list_directory)
+    router.register("materials.importFiles", materials_import_files)
+    router.register("materials.importText", materials_import_text)
+    router.register("materials.list", materials_list)
+    router.register("materials.get", materials_get)
+    router.register("materials.checkFreshness", materials_check_freshness)
+    router.register("materials.previewFile", materials_preview_file)
+    # Main-process only: dialog results are registered here, never via the renderer.
+    router.register("internal.registerGrant", internal_register_grant)
     router.register("system.initialize", initialize)
     router.register("system.ping", ping)
     router.register("system.shutdown", shutdown)

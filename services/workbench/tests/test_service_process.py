@@ -42,7 +42,7 @@ def test_initialize_ping_shutdown_with_stdin_still_open(service):
     process, responses = service()
     send(process,"system.initialize")
     result = responses.get(timeout=4)["result"]
-    assert result["protocol_version"] == 1 and result["schema_version"] == 2
+    assert result["protocol_version"] == 1 and result["schema_version"] == 3
     uuid.UUID(result["service_instance_id"])
     assert "system.shutdown" in result["capabilities"]
     send(process,"system.initialize",id=2)

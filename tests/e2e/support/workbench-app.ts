@@ -24,10 +24,15 @@ function electronBinary(): string {
 export interface LaunchedWorkbench {
   app: ElectronApplication;
   page: Page;
+  dataDir: string;
   close: () => Promise<void>;
 }
 
-export async function launchWorkbench(): Promise<LaunchedWorkbench> {
+export interface LaunchOptions {
+  env?: Record<string, string | undefined>;
+}
+
+export async function launchWorkbench(options: LaunchOptions = {}): Promise<LaunchedWorkbench> {
   const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'zhixu-e2e-'));
   const app = await electron.launch({
     executablePath: electronBinary(),
@@ -38,6 +43,7 @@ export async function launchWorkbench(): Promise<LaunchedWorkbench> {
       WORKBENCH_SERVICE_MODE: 'python',
       WORKBENCH_REPO_ROOT: repoRoot,
       WORKBENCH_DATA_DIR: dataDir,
+      ...options.env,
     },
   });
   const page = await app.firstWindow();
@@ -46,6 +52,7 @@ export async function launchWorkbench(): Promise<LaunchedWorkbench> {
   return {
     app,
     page,
+    dataDir,
     close: async () => {
       await app.close();
       fs.rmSync(dataDir, { recursive: true, force: true });

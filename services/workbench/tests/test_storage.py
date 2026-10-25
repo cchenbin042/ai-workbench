@@ -37,7 +37,7 @@ def operation(**patch):
 
 
 async def test_open_migrates_and_enables_durable_settings(store):
-    assert store.schema_version == 2
+    assert store.schema_version == 3
     settings = await store.transaction(lambda conn: {
         "wal": conn.execute("PRAGMA journal_mode").fetchone()[0],
         "full": conn.execute("PRAGMA synchronous").fetchone()[0],
@@ -46,7 +46,8 @@ async def test_open_migrates_and_enables_durable_settings(store):
     })
     assert settings == {"wal": "wal", "full": 2, "fk": 1, "timeout": 5000}
     tables = {row["name"] for row in await store.read("SELECT name FROM sqlite_master WHERE type='table'")}
-    assert tables == {"schema_migrations", "operations", "drafts", "notes", "tasks", "task_runs", "task_events"}
+    assert tables == {"schema_migrations", "operations", "drafts", "notes", "tasks", "task_runs",
+                      "task_events", "workspaces", "directory_links", "materials", "material_versions"}
     assert (await store.read("PRAGMA integrity_check"))[0]["integrity_check"] == "ok"
 
 
@@ -174,16 +175,16 @@ async def test_cancelled_request_does_not_cancel_committed_write_or_close(store)
 async def test_migration_failure_preserves_backup(tmp_path, monkeypatch):
     import workbench.storage as storage_module
     path = tmp_path / "data" / "workbench.sqlite3"
-    store = await Storage.open(path)
-    await save_draft(draft(), store)
-    await store.close()
     migrations = tmp_path / "migrations"
     migrations.mkdir()
     source = Path(storage_module.MIGRATIONS_DIR)
     (migrations / "0001_core.sql").write_bytes((source / "0001_core.sql").read_bytes())
     (migrations / "0002_tasks.sql").write_bytes((source / "0002_tasks.sql").read_bytes())
-    (migrations / "0003_broken.sql").write_text("CREATE TABLE must_rollback(id TEXT);\nINVALID private-token;", encoding="utf-8")
     monkeypatch.setattr(storage_module, "MIGRATIONS_DIR", migrations)
+    store = await Storage.open(path)
+    await save_draft(draft(), store)
+    await store.close()
+    (migrations / "0003_broken.sql").write_text("CREATE TABLE must_rollback(id TEXT);\nINVALID private-token;", encoding="utf-8")
     with pytest.raises(DomainError) as error:
         await Storage.open(path)
     assert error.value.code == "MIGRATION_FAILED"
@@ -268,8 +269,6 @@ async def test_successful_upgrade_backs_up_wal_and_retains_five_snapshots(tmp_pa
     import json
     import workbench.storage as storage_module
     path = tmp_path / "data" / "workbench.sqlite3"
-    store = await Storage.open(path)
-    await store.close()
     backups = tmp_path / "backups"
     for index in range(6):
         directory = backups / f"migration-20000101-{index}"
@@ -283,16 +282,19 @@ async def test_successful_upgrade_backs_up_wal_and_retains_five_snapshots(tmp_pa
     migrations.mkdir()
     (migrations / "0001_core.sql").write_bytes((storage_module.MIGRATIONS_DIR / "0001_core.sql").read_bytes())
     (migrations / "0002_tasks.sql").write_bytes((storage_module.MIGRATIONS_DIR / "0002_tasks.sql").read_bytes())
-    (migrations / "0003_next.sql").write_text("CREATE TABLE upgrade_probe(id TEXT PRIMARY KEY) STRICT;")
     monkeypatch.setattr(storage_module, "MIGRATIONS_DIR", migrations)
+    store = await Storage.open(path)
+    assert store.schema_version == 2
+    await store.close()
     with sqlite3.connect(path, isolation_level=None) as writer:
         writer.execute("PRAGMA journal_mode=WAL")
         writer.execute("PRAGMA wal_autocheckpoint=0")
         writer.execute("INSERT INTO notes(id,owner_type,owner_id,content_md) VALUES('n1','local','o1','wal content')")
         assert Path(str(path) + "-wal").stat().st_size > 0
-        store = await Storage.open(path)
-        assert store.schema_version == 3
-        await store.close()
+    (migrations / "0003_next.sql").write_text("CREATE TABLE upgrade_probe(id TEXT PRIMARY KEY) STRICT;")
+    store = await Storage.open(path)
+    assert store.schema_version == 3
+    await store.close()
     snapshots = sorted(backups.glob("migration-*"))
     assert len(snapshots) == 5
     assert manual.is_dir()
@@ -315,14 +317,14 @@ async def test_successful_upgrade_backs_up_wal_and_retains_five_snapshots(tmp_pa
 async def test_backup_cleanup_failure_does_not_reverse_successful_migration(tmp_path, monkeypatch):
     import workbench.storage as storage_module
     path = tmp_path / "data" / "workbench.sqlite3"
-    store = await Storage.open(path)
-    await store.close()
     migrations = tmp_path / "migrations"
     migrations.mkdir()
     (migrations / "0001_core.sql").write_bytes((storage_module.MIGRATIONS_DIR / "0001_core.sql").read_bytes())
     (migrations / "0002_tasks.sql").write_bytes((storage_module.MIGRATIONS_DIR / "0002_tasks.sql").read_bytes())
-    (migrations / "0003_next.sql").write_text("CREATE TABLE upgrade_probe(id TEXT PRIMARY KEY) STRICT;")
     monkeypatch.setattr(storage_module, "MIGRATIONS_DIR", migrations)
+    store = await Storage.open(path)
+    await store.close()
+    (migrations / "0003_next.sql").write_text("CREATE TABLE upgrade_probe(id TEXT PRIMARY KEY) STRICT;")
     def fail_cleanup(self):
         raise OSError("private-token")
     monkeypatch.setattr(Storage, "_prune_backups", fail_cleanup)
@@ -352,13 +354,13 @@ async def test_newer_database_refuses_downgrade_without_modifying_data(tmp_path)
     await save_draft(draft(), store)
     await store.close()
     with sqlite3.connect(path) as conn:
-        conn.execute("INSERT INTO schema_migrations(version,checksum,applied_at) VALUES(3,?,?)",
+        conn.execute("INSERT INTO schema_migrations(version,checksum,applied_at) VALUES(4,?,?)",
                      ("a" * 64, "2026-10-18T00:00:00+00:00"))
     with pytest.raises(DomainError) as error:
         await Storage.open(path)
     assert error.value.code == "MIGRATION_FAILED"
     with sqlite3.connect(path) as conn:
-        assert conn.execute("SELECT max(version) FROM schema_migrations").fetchone()[0] == 3
+        assert conn.execute("SELECT max(version) FROM schema_migrations").fetchone()[0] == 4
         assert conn.execute("SELECT count(*) FROM drafts").fetchone()[0] == 1
 
 

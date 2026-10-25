@@ -20,8 +20,7 @@ export function PlaceholderPage({ page, onNavigate }: PlaceholderPageProps) {
       {page === 'more' ? <MoreHub onNavigate={onNavigate} /> : null}
       {page === 'assistant' ? <AssistantHub onNavigate={onNavigate} /> : null}
       {page === 'settings' ? <SettingsOverview /> : null}
-      {page === 'workspace' ? <WorkspacePlaceholder onNavigate={onNavigate} /> : null}
-      {!['more', 'assistant', 'settings', 'workspace'].includes(page) ? (
+      {!['more', 'assistant', 'settings'].includes(page) ? (
         <MilestoneCard page={page} onNavigate={onNavigate} />
       ) : null}
     </section>
@@ -39,26 +38,6 @@ function MilestoneCard({ page, onNavigate }: PlaceholderPageProps) {
       <button type="button" className="text-link" onClick={() => onNavigate('home')}>
         返回首页 <Icon name="arrow" size={14} />
       </button>
-    </div>
-  );
-}
-
-function WorkspacePlaceholder({ onNavigate }: Pick<PlaceholderPageProps, 'onNavigate'>) {
-  return (
-    <div className="placeholder-card">
-      <span className="pill">待接入</span>
-      <h2>本页将在 M1 Task 04 接入</h2>
-      <p className="placeholder-note">
-        尚未连接工作区。目录关联、文件选择与来源快照将在本地服务实现后提供。
-      </p>
-      <div className="placeholder-actions">
-        <button type="button" className="primary-button" disabled>
-          选择目录（待接入）
-        </button>
-        <button type="button" className="text-link" onClick={() => onNavigate('home')}>
-          返回首页 <Icon name="arrow" size={14} />
-        </button>
-      </div>
     </div>
   );
 }
