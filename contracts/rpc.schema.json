@@ -213,6 +213,28 @@
       "title": "CreateWorkspaceCommand",
       "type": "object"
     },
+    "DeleteProviderSecretCommand": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "text",
+          "title": "Kind",
+          "type": "string"
+        },
+        "operation_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Operation Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "operation_id",
+        "kind"
+      ],
+      "title": "DeleteProviderSecretCommand",
+      "type": "object"
+    },
     "DirectoryEntry": {
       "additionalProperties": false,
       "properties": {
@@ -568,6 +590,21 @@
         "operation_id"
       ],
       "title": "GetOperationCommand",
+      "type": "object"
+    },
+    "GetProviderCommand": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "text",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "GetProviderCommand",
       "type": "object"
     },
     "GetTaskCommand": {
@@ -1315,6 +1352,12 @@
           "title": "Finish Reason",
           "type": "string"
         },
+        "model": {
+          "default": "unknown",
+          "minLength": 1,
+          "title": "Model",
+          "type": "string"
+        },
         "request_id": {
           "minLength": 1,
           "title": "Request Id",
@@ -1431,6 +1474,166 @@
         "line_count"
       ],
       "title": "PreviewResult",
+      "type": "object"
+    },
+    "ProviderListResult": {
+      "additionalProperties": false,
+      "properties": {
+        "items": {
+          "items": {
+            "$ref": "#/$defs/ProviderVersionResult"
+          },
+          "title": "Items",
+          "type": "array"
+        }
+      },
+      "required": [
+        "items"
+      ],
+      "title": "ProviderListResult",
+      "type": "object"
+    },
+    "ProviderTestResult": {
+      "additionalProperties": false,
+      "properties": {
+        "error_code": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Error Code"
+        },
+        "latency_ms": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Latency Ms"
+        },
+        "model_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Model Id"
+        },
+        "ok": {
+          "title": "Ok",
+          "type": "boolean"
+        },
+        "request_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Request Id"
+        },
+        "usage": {
+          "additionalProperties": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "title": "Usage",
+          "type": "object"
+        }
+      },
+      "required": [
+        "ok",
+        "error_code",
+        "latency_ms",
+        "model_id",
+        "request_id",
+        "usage"
+      ],
+      "title": "ProviderTestResult",
+      "type": "object"
+    },
+    "ProviderVersionResult": {
+      "additionalProperties": false,
+      "properties": {
+        "created_at": {
+          "minLength": 1,
+          "title": "Created At",
+          "type": "string"
+        },
+        "endpoint": {
+          "minLength": 1,
+          "title": "Endpoint",
+          "type": "string"
+        },
+        "has_secret": {
+          "title": "Has Secret",
+          "type": "boolean"
+        },
+        "kind": {
+          "const": "text",
+          "title": "Kind",
+          "type": "string"
+        },
+        "model_id": {
+          "minLength": 1,
+          "title": "Model Id",
+          "type": "string"
+        },
+        "parameters": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Parameters",
+          "type": "object"
+        },
+        "provider_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Provider Id",
+          "type": "string"
+        },
+        "secret_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Secret Ref"
+        },
+        "version_no": {
+          "exclusiveMinimum": 0,
+          "title": "Version No",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "provider_id",
+        "kind",
+        "version_no",
+        "endpoint",
+        "model_id",
+        "parameters",
+        "secret_ref",
+        "has_secret",
+        "created_at"
+      ],
+      "title": "ProviderVersionResult",
       "type": "object"
     },
     "RegisterGrantCommand": {
@@ -1715,6 +1918,35 @@
       "title": "SaveDraftResult",
       "type": "object"
     },
+    "SetProviderSecretCommand": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "text",
+          "title": "Kind",
+          "type": "string"
+        },
+        "operation_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Operation Id",
+          "type": "string"
+        },
+        "secret": {
+          "maxLength": 4096,
+          "minLength": 1,
+          "title": "Secret",
+          "type": "string"
+        }
+      },
+      "required": [
+        "operation_id",
+        "kind",
+        "secret"
+      ],
+      "title": "SetProviderSecretCommand",
+      "type": "object"
+    },
     "ShutdownResult": {
       "additionalProperties": false,
       "properties": {
@@ -1972,6 +2204,28 @@
       "title": "TaskWriteCommand",
       "type": "object"
     },
+    "TestProviderCommand": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "text",
+          "title": "Kind",
+          "type": "string"
+        },
+        "operation_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Operation Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "operation_id",
+        "kind"
+      ],
+      "title": "TestProviderCommand",
+      "type": "object"
+    },
     "UnlinkDirectoryCommand": {
       "additionalProperties": false,
       "properties": {
@@ -2000,6 +2254,49 @@
         "link_id"
       ],
       "title": "UnlinkDirectoryCommand",
+      "type": "object"
+    },
+    "UpdateProviderCommand": {
+      "additionalProperties": false,
+      "properties": {
+        "endpoint": {
+          "maxLength": 2048,
+          "minLength": 1,
+          "title": "Endpoint",
+          "type": "string"
+        },
+        "kind": {
+          "const": "text",
+          "title": "Kind",
+          "type": "string"
+        },
+        "model_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Model Id",
+          "type": "string"
+        },
+        "operation_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Operation Id",
+          "type": "string"
+        },
+        "parameters": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Parameters",
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation_id",
+        "kind",
+        "endpoint",
+        "model_id"
+      ],
+      "title": "UpdateProviderCommand",
       "type": "object"
     },
     "WorkspaceListResult": {
@@ -2103,6 +2400,9 @@
     "create_workspace_command": {
       "$ref": "#/$defs/CreateWorkspaceCommand"
     },
+    "delete_provider_secret_command": {
+      "$ref": "#/$defs/DeleteProviderSecretCommand"
+    },
     "directory_entry": {
       "$ref": "#/$defs/DirectoryEntry"
     },
@@ -2126,6 +2426,9 @@
     },
     "get_operation_command": {
       "$ref": "#/$defs/GetOperationCommand"
+    },
+    "get_provider_command": {
+      "$ref": "#/$defs/GetProviderCommand"
     },
     "get_task_command": {
       "$ref": "#/$defs/GetTaskCommand"
@@ -2193,6 +2496,15 @@
     "preview_result": {
       "$ref": "#/$defs/PreviewResult"
     },
+    "provider_list": {
+      "$ref": "#/$defs/ProviderListResult"
+    },
+    "provider_test_result": {
+      "$ref": "#/$defs/ProviderTestResult"
+    },
+    "provider_version_result": {
+      "$ref": "#/$defs/ProviderVersionResult"
+    },
     "register_grant_command": {
       "$ref": "#/$defs/RegisterGrantCommand"
     },
@@ -2216,6 +2528,9 @@
     "save_draft_result": {
       "$ref": "#/$defs/SaveDraftResult"
     },
+    "set_provider_secret_command": {
+      "$ref": "#/$defs/SetProviderSecretCommand"
+    },
     "shutdown": {
       "$ref": "#/$defs/ShutdownResult"
     },
@@ -2228,8 +2543,14 @@
     "task_write_command": {
       "$ref": "#/$defs/TaskWriteCommand"
     },
+    "test_provider_command": {
+      "$ref": "#/$defs/TestProviderCommand"
+    },
     "unlink_directory_command": {
       "$ref": "#/$defs/UnlinkDirectoryCommand"
+    },
+    "update_provider_command": {
+      "$ref": "#/$defs/UpdateProviderCommand"
     },
     "workspace": {
       "$ref": "#/$defs/WorkspaceResult"
@@ -2286,7 +2607,15 @@
     "preview_file_command",
     "preview_result",
     "register_grant_command",
-    "grant_result"
+    "grant_result",
+    "get_provider_command",
+    "update_provider_command",
+    "provider_version_result",
+    "provider_list",
+    "set_provider_secret_command",
+    "delete_provider_secret_command",
+    "test_provider_command",
+    "provider_test_result"
   ],
   "title": "WorkbenchRpcContract",
   "type": "object"

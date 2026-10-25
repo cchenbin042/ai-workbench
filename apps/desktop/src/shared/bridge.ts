@@ -1,5 +1,6 @@
 export const PUBLIC_RPC_METHODS = [
   'system.ping',
+  'tasks.get',
   'workspaces.create',
   'workspaces.list',
   'workspaces.listLinks',
@@ -12,6 +13,12 @@ export const PUBLIC_RPC_METHODS = [
   'materials.get',
   'materials.checkFreshness',
   'materials.previewFile',
+  'providers.get',
+  'providers.list',
+  'providers.update',
+  'providers.setSecret',
+  'providers.deleteSecret',
+  'providers.test',
 ] as const;
 
 export type PublicRpcMethod = (typeof PUBLIC_RPC_METHODS)[number];

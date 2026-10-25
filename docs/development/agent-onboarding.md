@@ -2,14 +2,14 @@
 
 > 整理日期：2026-10-25（Asia/Shanghai）。
 > 面向读者：首次接手或跨会话继续开发的智能体。
-> 代码快照：T008 完成于工作区（基于 `dda737476b00206a32402ba59ff90fb8e237f6b9`），分支 `codex/backend-tasks`；T006～T008 的改动均未提交。这是定位信息，不是要求切换分支或重置工作区。
-> 当前判断：M1 的桌面壳、持久化、后端任务协调器与工作区/真实资料链路已实现；DeepSeek 接入与"资料到题库"的生成闭环尚未实现。
+> 代码快照：T008～T009 已提交并推送 origin/codex/backend-tasks（T008=440f421，T009 见 git log）。这是定位信息，不是要求切换分支或重置工作区。
+> 当前判断：M1 的桌面壳、持久化、任务协调器、工作区/真实资料与 DeepSeek 文本 provider（含真实连接验证）已实现；候选题生成与"资料到题库"闭环尚未实现。
 
 ## 1. 五分钟阅读顺序
 
 1. 阅读本文件，建立产品、架构和实现边界的整体认识。
 2. 阅读 [开发任务总览](master-plan.md)，确认最新焦点、任务编号和缺口；本文件可能滞后于后续开发。
-3. 阅读总览指向的当前任务明细，区分计划、实际改动和验证记录。最近完成的业务任务是 [T008：工作区、真实资料与来源快照](tasks/T008-2026-10-25-workspaces-materials.md)。
+3. 阅读总览指向的当前任务明细，区分计划、实际改动和验证记录。最近完成的业务任务是 [T009：DeepSeek 配置、系统密钥与文本请求](tasks/T009-2026-10-25-providers-deepseek.md)。
 4. 按任务查阅 [PRD](../product/prd-ai-workbench-v1.md)、[技术方案](../technical/technical-design-v1.md) 和 [M1 实施计划](../superpowers/plans/2026-10-18-ai-workbench-m1-plan.md)。
 5. 执行 `git status --short`、`git branch --show-current` 和 `git log -5 --oneline`，再读取目标模块和测试。不要从本文推导提交、推送或合并授权。
 
@@ -72,7 +72,8 @@ Python application（严格契约、任务协调、业务提交）
 | [tasks.py](../../services/workbench/src/workbench/tasks.py) | `TaskService`；FIFO、执行代次、取消、检查点、恢复与事件 |
 | [paths.py](../../services/workbench/src/workbench/paths.py) | Windows 路径安全：规范化、段包含、reparse/UNC/ADS 拒绝、读取前后复核与编码探测 |
 | [workspaces.py](../../services/workbench/src/workbench/workspaces.py) / [materials.py](../../services/workbench/src/workbench/materials.py) | 工作区与目录关联；grant 注册表、资料导入、不可变版本、预览与新鲜度 |
-| [migrations/](../../services/workbench/src/workbench/migrations) | `0001_core.sql`～`0003_materials.sql`；当前数据库 schema 为 3 |
+| [providers/](../../services/workbench/src/workbench/providers) | 配置版本化（HTTPS/loopback 校验）、keyring 白名单封装（DB 只存引用）、DeepSeekClient（受限重试/超时/脱敏）、经任务槽的连接测试 |
+| [migrations/](../../services/workbench/src/workbench/migrations) | `0001_core.sql`～`0004_providers.sql`；当前数据库 schema 为 4 |
 | [contracts/](../../contracts) | Python 导出的 JSON Schema 和生成的 TypeScript 类型 |
 | [services/workbench/tests/](../../services/workbench/tests) / [tests/e2e/](../../tests/e2e) | 后端真实 SQLite/子进程测试，桌面 Playwright 检查 |
 | [scripts/](../../scripts) | Windows 安装、构建、契约导出与验证脚本 |
@@ -89,14 +90,14 @@ Python application（严格契约、任务协调、业务提交）
 | SQLite 与草稿 | T003 已完成；WAL、单写线程、幂等写、revision、迁移备份、`drafts.save/get` | 当前只支持 `local` 范围和 owner；前端未接草稿持久化 |
 | 后端任务协调 | T005 已完成；单槽 FIFO、取消、run 栅栏、同事务事件、恢复与分页查询 | 没有真实 Agent handler；`tasks.create` 未作为公开 stdio 方法注册，任务 UI 未接入 |
 | 工作区与真实资料 | T008 已完成；schema=3 四表、grant 目录授权、路径安全受控读取、不可变来源快照、预览/导入分离、新鲜度检查、@materials e2e | 任务级 material_version_ids 归属校验待 Task 06 接入；"读取新版"经再次勾选导入实现，无专用快捷入口；导出/归档未做 |
-| DeepSeek 与题库 | 已有 DTO、PRD 和计划 | 配置、系统密钥、真实 provider、生成、检查入库、检索导出待实现 |
+| DeepSeek 与题库 | T009 已完成配置版本化、系统密钥（keyring 白名单）、真实连接验证（deepseek-flash ok、bogus key→AUTH_FAILED）与 SettingsPage | 候选生成、检查入库、检索导出属 Task 06～07；SSE 流式与 ASR 后续 |
 | 面试、报告、复习 | 原型可表达交互，M2 有计划 | 正式业务尚未实现 |
 | 语音与 MCP | 原型演示，M3 有计划 | 真实 ASR/MCP 接入与验收尚未完成 |
 | 发行包 | 已有 Electron 桌面壳产物；forge.config.ts 已钉住 electron zip sha256 | PyInstaller 与服务包缺失；未验证无 Python/Node 环境运行 |
 
-后端目前注册的公开方法是：`system.initialize/ping/shutdown`、`drafts.save/get`、`tasks.get/list/cancel/resume/continue`、`events.list`、`operations.get`、`workspaces.create/list/listLinks/linkDirectory/unlinkDirectory`、`materials.listDirectory/importFiles/importText/list/get/checkFreshness/previewFile`。另有仅 main 可调的 `internal.registerGrant`（选择凭据登记）。公开不等于前端已接：桌面 bridge 白名单当前放行 `system.ping`、`workspaces.*` 与 `materials.*`，任务类方法尚未开放。
+后端目前注册的公开方法是：`system.initialize/ping/shutdown`、`drafts.save/get`、`tasks.get/list/cancel/resume/continue`、`events.list`、`operations.get`、`workspaces.create/list/listLinks/linkDirectory/unlinkDirectory`、`materials.listDirectory/importFiles/importText/list/get/checkFreshness/previewFile`、`providers.get/list/update/setSecret/deleteSecret/test`。另有仅 main 可调的 `internal.registerGrant`。桌面 bridge 白名单放行 `system.ping`、`tasks.get`、`workspaces.*`、`materials.*` 与 `providers.*`；`tasks.create` 仍不公开，generic 任务仅由连接测试在服务内部创建。
 
-数据库现有表：`schema_migrations`、`operations`、`drafts`、`notes`、`tasks`、`task_runs`、`task_events`、`workspaces`、`directory_links`、`materials`、`material_versions`。`notes` 已建表但未开放业务 RPC。
+数据库现有表：`schema_migrations`、`operations`、`drafts`、`notes`、`tasks`、`task_runs`、`task_events`、`workspaces`、`directory_links`、`materials`、`material_versions`、`provider_configs`、`provider_config_versions`、`agent_configs`、`agent_config_versions`。`notes` 与 agent 配置已建表/种子但未开放业务 RPC；内置 agent 的 provider_version_id 为 NULL（跟随当前版本）。
 
 ## 6. 后续修改必须保留的机制
 
@@ -105,7 +106,7 @@ Python application（严格契约、任务协调、业务提交）
 - stdout 只输出协议帧，诊断走 stderr；不要在 stdout 打调试日志。单帧上限为 8 MiB。
 - `id` 是单次 RPC 标识；`operation_id` 是业务幂等标识。超时或 ACK 丢失时使用原操作 ID 和原参数查询或重试，不把超时当成事务失败。
 - 业务 DTO 以 Python 为源，变更后导出 Schema 并生成 TypeScript。手写的桌面 bridge 白名单仍需单独接线，生成类型不会自动开放 IPC。
-- 初始化当前返回 `protocol_version=1`、实际迁移得到的 `schema_version=3` 和每进程固定的 `service_instance_id`。旧文档中的 schema=1/2 是历史记录。
+- 初始化当前返回 `protocol_version=1`、实际迁移得到的 `schema_version=4` 和每进程固定的 `service_instance_id`。旧文档中的 schema=1/2/3 是历史记录。
 
 ### 存储和任务
 
@@ -122,7 +123,9 @@ Python application（严格契约、任务协调、业务提交）
 
 T008 已实现以下要求（不要回退）：目录授权只经 main 对话框登记为 grant（`internal.registerGrant`，renderer 白名单拒绝）；预览与选入分开（`materials.previewFile` 不落库，`importFiles` 生成不可变版本）；资料默认只读；单份文本上限 200000 字节、单批合计 1000000 字节；模型上下文预算另行校验。历史来源版本不可变，同路径重新导入 hash 相同不新增版本，变化则 version_no+1；关联移除后 `check_freshness` 不再触碰文件系统，只用快照回答。
 
-仍是后续实现要求：模型上下文预算在 Task 06 接入；资料/题目等实体的任务归属与 Agent 版本校验在 Task 06 按真实引用补齐。DeepSeek 密钥按方案进入系统密钥存储，数据库保存引用；不能把密钥、私人资料或完整输入写进日志、文档和测试证据。当前 Windows 进程树清理使用 `taskkill /T`，Job Object 仍是发行阶段缺口。
+T009 已实现（不要回退）：provider 配置只增版本（endpoint 强制 HTTPS，loopback HTTP 例外）；密钥只存系统 keyring（白名单 WinVaultKeyring，禁明文/空后端降级），数据库仅存 `keyring:…` 引用，RPC 结果只报 has_secret；DeepSeekClient 只在明确 429/5xx 且无内容时退避重试 1 次，未知断开与超时交用户决定；连接测试经唯一执行槽且不带资料；日志只有 request_id/finish/latency/usage。generic 任务的动作分发是白名单制（当前仅 provider_connection_test）。
+
+仍是后续实现要求：模型上下文预算与 material_version_ids 归属校验在 Task 06 接入；资料/题目等实体的任务归属与 Agent 版本校验按真实引用补齐。不能把密钥、私人资料或完整输入写进日志、文档和测试证据。当前 Windows 进程树清理使用 `taskkill /T`，Job Object 仍是发行阶段缺口。
 
 ## 7. 运行与检查
 
@@ -166,8 +169,9 @@ npm --prefix apps/desktop run test:e2e -- --grep '@shell|@unit|@nav'
 
 | 时间与来源 | 命令或检查 | 已知结果 | 能证明什么 |
 | --- | --- | --- | --- |
-| 2026-10-25，T008 会话实际执行 | `scripts/verify-backend.ps1` | 132 passed；pip check、compileall、Schema 一致 | 当前后端基线通过（含 T008 的 12 项资料测试）；不含真实云服务 |
-| 2026-10-25，同一会话 | desktop `typecheck`、`contracts:types:check`、`test:e2e --grep "@shell&#124;@unit&#124;@nav&#124;@materials"` | 退出码 0；17 passed（@materials 3 项新增） | 类型与契约一致；资料库页经真实服务完成链接/预览/导入/隔离验收；对话框为测试替身，非发行包验收 |
+| 2026-10-25，T008～T009 会话实际执行 | `scripts/verify-backend.ps1` | 140 passed；pip check、compileall、Schema 一致 | 当前后端基线通过；不含真实云服务（真实 DeepSeek 见下行） |
+| 2026-10-25，同一会话 | desktop `typecheck`、`contracts:types:check`、`test:e2e --grep "@shell&#124;@unit&#124;@nav&#124;@materials&#124;@settings"` | 退出码 0；18 passed | 类型与契约一致；资料库与设置页经真实服务验收；对话框为测试替身，非发行包验收 |
+| 2026-10-25，真实 DeepSeek 验证 | providers.setSecret→providers.test（真实服务子进程） | deepseek-flash 连接 ok≈2.4～2.7s 含 request_id/usage；bogus key→AUTH_FAILED；日志泄漏扫描 CLEAN | 用户本人账号的最小请求，不含资料内容；非发行包验证（G01） |
 | 2026-10-19，T006/T007 会话 | `scripts/verify-backend.ps1` | 120 passed，26.67s | 当时基线；schema=2 时代记录 |
 | 2026-10-18，[T005 最终验收](tasks/T005-2026-10-18-backend-tasks.md) | `@shell`、`@unit`、`@nav` | 历史记录为 14 passed | 桌面壳、通信与导航；现由 17 项覆盖 |
 
@@ -177,8 +181,8 @@ T008 会话中 Python 3.14.2 环境可直接运行，T006 期间的启动问题�
 
 ## 9. 推荐接续顺序
 
-1. **M1 Task 05：DeepSeek 配置与密钥。** 接入真实 provider、系统密钥存储（keyring + Windows 后端白名单）、连接测试和错误处理；`providers/`、`0004_providers.sql`、SettingsPage 按计划创建。不提前伪造生成结果；缺账号时记录 blocked。
-2. **Task 06～07：候选题与题库。** 接上下文预算、来源校验（material_version_ids 归属校验在这里补齐）、候选检查、事务入库、版本、搜索和 JSON 导出。
+1. **M1 Task 06：带来源校验的候选题生成。** 消费 DeepSeekClient 与 MaterialVersion 快照：上下文预算（24000/8000 token + 20% 余量）、material_version_ids 归属校验、分批（每批≤10）、来源校验、结构修复≤1 次、取消栅栏；TaskService.create 的真实 workspace/agent 校验在这里补齐。
+2. **Task 07：题库事务、版本、搜索与 JSON 导出。**
 3. **Task 08～09：草稿与端到端验收。** 完成草稿 ACK、错误/离线状态与 M1 实际切片验收；前端 TaskPage/useTask 和后端任务 RPC 的接入也仍需落实。
 4. **保留 G01/G04 的发行工作。** Python 打包与进程树管理是独立缺口；不能因业务开发继续而将其默认为已解决。
 

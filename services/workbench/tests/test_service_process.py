@@ -5,6 +5,7 @@ import queue
 import subprocess
 import sys
 import threading
+import time
 import uuid
 
 import pytest
@@ -42,7 +43,7 @@ def test_initialize_ping_shutdown_with_stdin_still_open(service):
     process, responses = service()
     send(process,"system.initialize")
     result = responses.get(timeout=4)["result"]
-    assert result["protocol_version"] == 1 and result["schema_version"] == 3
+    assert result["protocol_version"] == 1 and result["schema_version"] == 4
     uuid.UUID(result["service_instance_id"])
     assert "system.shutdown" in result["capabilities"]
     send(process,"system.initialize",id=2)
@@ -287,8 +288,25 @@ def test_real_process_startup_recovers_tasks_without_replaying_work(service, tmp
     event = responses.get(timeout=3)["result"][0]
     assert event["seq"] == 3 and event["payload"]["status"] == "interrupted"
     assert event["service_instance_id"] == first_instance
+    # The generic flow is registered for the provider connection test, so the
+    # resume succeeds; the worker then rejects this unknown generic action.
+    # Successful state changes push events, so reads must filter by RPC id.
+    def wait_response(request_id: int, timeout: float = 3):
+        while True:
+            message = responses.get(timeout=timeout)
+            if message.get("id") == request_id:
+                return message
+
     send(process, "tasks.resume", id=6, params={"task_id": running["task_id"], "operation_id": str(uuid.uuid4()), "expected_revision": 3})
-    assert responses.get(timeout=3)["error"]["data"]["code"] == "FLOW_UNAVAILABLE"
+    assert wait_response(6)["result"]["status"] == "queued"
+    status = None
+    for index in range(50):
+        send(process, "tasks.get", id=100 + index, params={"task_id": running["task_id"]})
+        status = wait_response(100 + index)["result"]["status"]
+        if status == "failed":
+            break
+        time.sleep(0.05)
+    assert status == "failed"
     # Kill the actual service, then verify a second instance keeps the snapshot.
     process.kill()
     assert process.wait(timeout=3) != 0
@@ -297,11 +315,15 @@ def test_real_process_startup_recovers_tasks_without_replaying_work(service, tmp
     second_instance = responses.get(timeout=4)["result"]["service_instance_id"]
     assert second_instance != first_instance
     send(process, "tasks.get", id=2, params={"task_id": running["task_id"]})
-    assert responses.get(timeout=3)["result"]["status"] == "interrupted"
+    # The first instance already ran the resumed task to a terminal failure;
+    # recovery keeps terminal states, so the snapshot survives unchanged.
+    assert responses.get(timeout=3)["result"]["status"] == "failed"
     send(process, "events.list", id=3, params={"task_id": running["task_id"], "after_seq": 2})
-    historical = responses.get(timeout=3)["result"]
-    assert [event["seq"] for event in historical] == [3]
-    assert historical[0]["service_instance_id"] == first_instance
+    historical = wait_response(3)["result"]
+    assert [event["seq"] for event in historical] == [3, 4, 5, 6]
+    assert [event["type"] for event in historical] == ["task.status_changed", "task.status_changed",
+                                                       "step.started", "step.failed"]
+    assert all(event["service_instance_id"] == first_instance for event in historical)
     send(process, "system.shutdown", id=4)
     assert responses.get(timeout=3)["id"] == 4
     assert process.wait(timeout=3) == 0

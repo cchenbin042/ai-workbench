@@ -37,6 +37,7 @@ class ModelResult(Contract):
     finish_reason: NonEmptyStr
     request_id: NonEmptyStr
     usage: dict[str, NonNegativeInt]
+    model: NonEmptyStr = "unknown"
 
 
 class DomainErrorData(Contract):
@@ -329,6 +330,71 @@ class GrantResult(Contract):
     files: list[NonEmptyStr] = Field(default_factory=list)
 
 
+ProviderKind = Literal["text"]
+
+
+class GetProviderCommand(Contract):
+    kind: ProviderKind
+
+
+class UpdateProviderCommand(Contract):
+    operation_id: ShortId
+    kind: ProviderKind
+    endpoint: Annotated[str, Field(min_length=1, max_length=2048)]
+    model_id: Annotated[str, Field(min_length=1, max_length=128)]
+    parameters: dict[str, JsonValue] = Field(default_factory=dict)
+
+    @field_validator("parameters")
+    @classmethod
+    def bounded_parameters(cls, value):
+        import json
+        encoded = json.dumps(value, ensure_ascii=False, allow_nan=False, separators=(",", ":"))
+        if len(encoded.encode("utf-8")) > 8192:
+            raise ValueError("Provider parameters are too large")
+        return value
+
+
+class ProviderVersionResult(Contract):
+    provider_id: ShortId
+    kind: ProviderKind
+    version_no: Annotated[StrictInt, Field(gt=0)]
+    endpoint: NonEmptyStr
+    model_id: NonEmptyStr
+    parameters: dict[str, JsonValue]
+    secret_ref: str | None
+    has_secret: StrictBool
+    created_at: NonEmptyStr
+
+
+class ProviderListResult(Contract):
+    items: list[ProviderVersionResult]
+
+
+class SetProviderSecretCommand(Contract):
+    operation_id: ShortId
+    kind: ProviderKind
+    secret: Annotated[str, Field(min_length=1, max_length=4096)]
+
+
+class DeleteProviderSecretCommand(Contract):
+    operation_id: ShortId
+    kind: ProviderKind
+
+
+class TestProviderCommand(Contract):
+    operation_id: ShortId
+    kind: ProviderKind
+
+
+class ProviderTestResult(Contract):
+    ok: StrictBool
+    error_code: str | None
+    latency_ms: NonNegativeInt | None
+    model_id: str | None
+    request_id: str | None
+    usage: dict[str, NonNegativeInt]
+
+
 
 
 class CreateTaskCommand(Contract):
@@ -464,3 +530,11 @@ class WorkbenchRpcContract(Contract):
     preview_result: PreviewResult
     register_grant_command: RegisterGrantCommand
     grant_result: GrantResult
+    get_provider_command: GetProviderCommand
+    update_provider_command: UpdateProviderCommand
+    provider_version_result: ProviderVersionResult
+    provider_list: ProviderListResult
+    set_provider_secret_command: SetProviderSecretCommand
+    delete_provider_secret_command: DeleteProviderSecretCommand
+    test_provider_command: TestProviderCommand
+    provider_test_result: ProviderTestResult

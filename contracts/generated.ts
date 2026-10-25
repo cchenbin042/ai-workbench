@@ -45,6 +45,8 @@ export type RoleTags =
   | [string, string, string, string, string, string]
   | [string, string, string, string, string, string, string]
   | [string, string, string, string, string, string, string, string];
+export type Kind = 'text';
+export type OperationId4 = string;
 export type ModifiedAt = string;
 export type RelativePath = string;
 export type SizeBytes = number;
@@ -68,14 +70,15 @@ export type OwnerType1 = 'local';
 export type ScopeId3 = 'local';
 export type MaterialId1 = string;
 export type WorkspaceId3 = string | null;
-export type OperationId4 = string;
+export type OperationId5 = string;
 export type ScopeId4 = 'local';
+export type Kind1 = 'text';
 export type ScopeId5 = 'local';
 export type TaskId1 = string;
 export type ExpiresAt = string;
 export type Files = string[];
 export type GrantId = string;
-export type Kind = 'directory' | 'files';
+export type Kind2 = 'directory' | 'files';
 export type Root = string | null;
 export type Encoding = string | null;
 export type RelativePath1 = string;
@@ -85,7 +88,7 @@ export type RelativePath1 = string;
 export type Entries1 = ImportEntry[];
 export type GrantId1 = string | null;
 export type LinkId3 = string | null;
-export type OperationId5 = string;
+export type OperationId6 = string;
 export type WorkspaceId4 = string;
 export type ByteSize = number;
 export type ContentText = string;
@@ -97,7 +100,7 @@ export type Sha256 = string;
 export type VersionNo = number;
 export type DisplayName = string;
 export type Encoding2 = string;
-export type Kind1 = 'file' | 'text';
+export type Kind3 = 'file' | 'text';
 export type LineCount1 = number;
 export type MaterialId2 = string;
 export type ReadAt1 = string;
@@ -109,14 +112,14 @@ export type Materials = MaterialDetail[];
 export type TotalBytes = number;
 export type ContentText1 = string;
 export type DisplayName1 = string;
-export type OperationId6 = string;
+export type OperationId7 = string;
 export type WorkspaceId6 = string | null;
 export type Capabilities = string[];
 export type ProtocolVersion = 1;
 export type SchemaVersion = number;
 export type ServiceInstanceId = string;
 export type GrantId2 = string;
-export type OperationId7 = string;
+export type OperationId8 = string;
 export type WorkspaceId7 = string;
 export type LinkId4 = string;
 export type WorkspaceId8 = string;
@@ -143,7 +146,7 @@ export type Status1 =
     )
   | null;
 export type DisplayName2 = string;
-export type Kind2 = 'file' | 'text';
+export type Kind4 = 'file' | 'text';
 export type MaterialId3 = string;
 export type SourcePath2 = string | null;
 export type WorkspaceId11 = string | null;
@@ -161,6 +164,7 @@ export type ResponseFormat = {
 } | null;
 export type Content1 = string;
 export type FinishReason = string;
+export type Model = string;
 export type RequestId = string;
 export type Ok = true;
 export type ServiceInstanceId1 = string;
@@ -173,7 +177,21 @@ export type ContentText2 = string;
 export type Encoding3 = string;
 export type LineCount2 = number;
 export type Sha2562 = string;
-export type Kind3 = 'directory' | 'files';
+export type CreatedAt = string;
+export type Endpoint = string;
+export type HasSecret = boolean;
+export type Kind5 = 'text';
+export type ModelId1 = string;
+export type ProviderId = string;
+export type SecretRef = string | null;
+export type VersionNo2 = number;
+export type Items2 = ProviderVersionResult[];
+export type ErrorCode = string | null;
+export type LatencyMs = number | null;
+export type ModelId2 = string | null;
+export type Ok1 = boolean;
+export type RequestId1 = string | null;
+export type Kind6 = 'directory' | 'files';
 export type Path = string | null;
 /**
  * @maxItems 64
@@ -199,17 +217,20 @@ export type Message = string;
 export type Id2 = number | string | null;
 export type Jsonrpc2 = '2.0';
 export type ExpectedRevision2 = number | null;
-export type OperationId8 = string;
+export type OperationId9 = string;
 export type OwnerId2 = string;
 export type OwnerType2 = 'local';
 export type ScopeId8 = 'local';
 export type DraftId1 = string;
 export type Revision1 = number;
 export type SavedAt1 = string;
+export type Kind7 = 'text';
+export type OperationId10 = string;
+export type Secret = string;
 export type Status3 = 'shutting_down';
 export type ActiveRunId = string | null;
 export type AgentConfigVersionId1 = null;
-export type CreatedAt = string;
+export type CreatedAt1 = string;
 export type LastSeq = number;
 export type Revision2 = number;
 export type Status4 =
@@ -220,7 +241,7 @@ export type UpdatedAt = string;
 export type WaitingReason =
   ('review_candidates' | 'answer_question' | 'verify_transcript' | 'approve_tool' | 'review_artifact') | null;
 export type WorkspaceId13 = null;
-export type CreatedAt1 = string;
+export type CreatedAt2 = string;
 export type EventId = string;
 export type RunId = string | null;
 export type Seq = number;
@@ -229,20 +250,26 @@ export type TaskId4 = string;
 export type TaskRevision = number;
 export type Type = string;
 export type ExpectedRevision3 = number;
-export type OperationId9 = string;
+export type OperationId11 = string;
 export type ScopeId9 = 'local';
 export type TaskId5 = string;
+export type Kind8 = 'text';
+export type OperationId12 = string;
 export type LinkId6 = string;
-export type OperationId10 = string;
+export type OperationId13 = string;
 export type WorkspaceId14 = string;
+export type Endpoint1 = string;
+export type Kind9 = 'text';
+export type ModelId3 = string;
+export type OperationId14 = string;
 export type ArchivedAt = string | null;
-export type CreatedAt2 = string;
+export type CreatedAt3 = string;
 export type Name1 = string;
 export type Revision3 = number;
 export type RoleTags1 = string[];
 export type UpdatedAt1 = string;
 export type WorkspaceId15 = string;
-export type Items2 = WorkspaceResult[];
+export type Items3 = WorkspaceResult[];
 
 export interface WorkbenchRpcContract {
   check_freshness_command: CheckFreshnessCommand;
@@ -251,6 +278,7 @@ export interface WorkbenchRpcContract {
   continue_task_command: ContinueTaskCommand;
   create_task_command: CreateTaskCommand;
   create_workspace_command: CreateWorkspaceCommand;
+  delete_provider_secret_command: DeleteProviderSecretCommand;
   directory_entry: DirectoryEntry;
   directory_link: DirectoryLinkResult;
   directory_listing: DirectoryListingResult;
@@ -259,6 +287,7 @@ export interface WorkbenchRpcContract {
   get_draft_command: GetDraftCommand;
   get_material_command: GetMaterialCommand;
   get_operation_command: GetOperationCommand;
+  get_provider_command: GetProviderCommand;
   get_task_command: GetTaskCommand;
   grant_result: GrantResult;
   import_entry: ImportEntry;
@@ -281,16 +310,22 @@ export interface WorkbenchRpcContract {
   ping: PingResult;
   preview_file_command: PreviewFileCommand;
   preview_result: PreviewResult;
+  provider_list: ProviderListResult;
+  provider_test_result: ProviderTestResult;
+  provider_version_result: ProviderVersionResult;
   register_grant_command: RegisterGrantCommand;
   request: RpcRequest;
   response: Response;
   save_draft_command: SaveDraftCommand;
   save_draft_result: SaveDraftResult;
+  set_provider_secret_command: SetProviderSecretCommand;
   shutdown: ShutdownResult;
   task: TaskSnapshot;
   task_event: TaskEvent;
   task_write_command: TaskWriteCommand;
+  test_provider_command: TestProviderCommand;
   unlink_directory_command: UnlinkDirectoryCommand;
+  update_provider_command: UpdateProviderCommand;
   workspace: WorkspaceResult;
   workspace_list: WorkspaceListResult;
 }
@@ -342,6 +377,10 @@ export interface CreateWorkspaceCommand {
   operation_id: OperationId3;
   role_tags?: RoleTags;
 }
+export interface DeleteProviderSecretCommand {
+  kind: Kind;
+  operation_id: OperationId4;
+}
 export interface DirectoryEntry {
   modified_at: ModifiedAt;
   relative_path: RelativePath;
@@ -382,8 +421,11 @@ export interface GetMaterialCommand {
   workspace_id?: WorkspaceId3;
 }
 export interface GetOperationCommand {
-  operation_id: OperationId4;
+  operation_id: OperationId5;
   scope_id?: ScopeId4;
+}
+export interface GetProviderCommand {
+  kind: Kind1;
 }
 export interface GetTaskCommand {
   scope_id?: ScopeId5;
@@ -393,7 +435,7 @@ export interface GrantResult {
   expires_at: ExpiresAt;
   files?: Files;
   grant_id: GrantId;
-  kind: Kind;
+  kind: Kind2;
   root?: Root;
 }
 export interface ImportEntry {
@@ -404,7 +446,7 @@ export interface ImportFilesCommand {
   entries?: Entries1;
   grant_id?: GrantId1;
   link_id?: LinkId3;
-  operation_id: OperationId5;
+  operation_id: OperationId6;
   workspace_id: WorkspaceId4;
 }
 export interface ImportResult {
@@ -417,7 +459,7 @@ export interface MaterialDetail {
   current_version: MaterialVersionSummary;
   display_name: DisplayName;
   encoding: Encoding2;
-  kind: Kind1;
+  kind: Kind3;
   line_count: LineCount1;
   material_id: MaterialId2;
   read_at: ReadAt1;
@@ -441,7 +483,7 @@ export interface Source {
 export interface ImportTextCommand {
   content_text: ContentText1;
   display_name: DisplayName1;
-  operation_id: OperationId6;
+  operation_id: OperationId7;
   workspace_id?: WorkspaceId6;
 }
 export interface InitializeResult {
@@ -452,7 +494,7 @@ export interface InitializeResult {
 }
 export interface LinkDirectoryCommand {
   grant_id: GrantId2;
-  operation_id: OperationId7;
+  operation_id: OperationId8;
   workspace_id: WorkspaceId7;
 }
 export interface ListDirectoryCommand {
@@ -483,7 +525,7 @@ export interface MaterialListResult {
 export interface MaterialSummary {
   current_version: MaterialVersionSummary;
   display_name: DisplayName2;
-  kind: Kind2;
+  kind: Kind4;
   material_id: MaterialId3;
   source_path: SourcePath2;
   workspace_id: WorkspaceId11;
@@ -501,6 +543,7 @@ export interface ModelMessage {
 export interface ModelResult {
   content: Content1;
   finish_reason: FinishReason;
+  model?: Model;
   request_id: RequestId;
   usage: Usage;
 }
@@ -524,8 +567,36 @@ export interface PreviewResult {
   line_count: LineCount2;
   sha256: Sha2562;
 }
+export interface ProviderListResult {
+  items: Items2;
+}
+export interface ProviderVersionResult {
+  created_at: CreatedAt;
+  endpoint: Endpoint;
+  has_secret: HasSecret;
+  kind: Kind5;
+  model_id: ModelId1;
+  parameters: Parameters;
+  provider_id: ProviderId;
+  secret_ref: SecretRef;
+  version_no: VersionNo2;
+}
+export interface Parameters {
+  [k: string]: JsonValue;
+}
+export interface ProviderTestResult {
+  error_code: ErrorCode;
+  latency_ms: LatencyMs;
+  model_id: ModelId2;
+  ok: Ok1;
+  request_id: RequestId1;
+  usage: Usage1;
+}
+export interface Usage1 {
+  [k: string]: number;
+}
 export interface RegisterGrantCommand {
-  kind: Kind3;
+  kind: Kind6;
   path?: Path;
   paths?: Paths;
 }
@@ -559,7 +630,7 @@ export interface DomainErrorData {
 export interface SaveDraftCommand {
   content_json: ContentJson1;
   expected_revision?: ExpectedRevision2;
-  operation_id: OperationId8;
+  operation_id: OperationId9;
   owner_id: OwnerId2;
   owner_type: OwnerType2;
   scope_id: ScopeId8;
@@ -572,6 +643,11 @@ export interface SaveDraftResult {
   revision: Revision1;
   saved_at: SavedAt1;
 }
+export interface SetProviderSecretCommand {
+  kind: Kind7;
+  operation_id: OperationId10;
+  secret: Secret;
+}
 export interface ShutdownResult {
   status?: Status3;
 }
@@ -579,7 +655,7 @@ export interface TaskSnapshot {
   active_run_id: ActiveRunId;
   agent_config_version_id: AgentConfigVersionId1;
   checkpoint: Checkpoint;
-  created_at: CreatedAt;
+  created_at: CreatedAt1;
   input: Input2;
   last_seq: LastSeq;
   revision: Revision2;
@@ -601,7 +677,7 @@ export interface Scope {
   [k: string]: JsonValue;
 }
 export interface TaskEvent {
-  created_at: CreatedAt1;
+  created_at: CreatedAt2;
   event_id: EventId;
   payload: Payload;
   run_id: RunId;
@@ -616,18 +692,32 @@ export interface Payload {
 }
 export interface TaskWriteCommand {
   expected_revision: ExpectedRevision3;
-  operation_id: OperationId9;
+  operation_id: OperationId11;
   scope_id?: ScopeId9;
   task_id: TaskId5;
 }
+export interface TestProviderCommand {
+  kind: Kind8;
+  operation_id: OperationId12;
+}
 export interface UnlinkDirectoryCommand {
   link_id: LinkId6;
-  operation_id: OperationId10;
+  operation_id: OperationId13;
   workspace_id: WorkspaceId14;
+}
+export interface UpdateProviderCommand {
+  endpoint: Endpoint1;
+  kind: Kind9;
+  model_id: ModelId3;
+  operation_id: OperationId14;
+  parameters?: Parameters1;
+}
+export interface Parameters1 {
+  [k: string]: JsonValue;
 }
 export interface WorkspaceResult {
   archived_at: ArchivedAt;
-  created_at: CreatedAt2;
+  created_at: CreatedAt3;
   name: Name1;
   revision: Revision3;
   role_tags: RoleTags1;
@@ -635,5 +725,5 @@ export interface WorkspaceResult {
   workspace_id: WorkspaceId15;
 }
 export interface WorkspaceListResult {
-  items: Items2;
+  items: Items3;
 }

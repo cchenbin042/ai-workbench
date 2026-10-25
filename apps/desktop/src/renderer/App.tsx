@@ -5,6 +5,7 @@ import { PlaceholderPage } from './components/PlaceholderPage';
 import { Sidebar } from './components/Sidebar';
 import { StatusPanel } from './components/StatusPanel';
 import { useServiceStatus } from './hooks/useServiceStatus';
+import { SettingsPage } from './pages/SettingsPage';
 import { WorkspacePage } from './pages/WorkspacePage';
 import { PAGES, type PageId } from './navigation';
 
@@ -64,6 +65,8 @@ export default function App() {
           />
         ) : page === 'workspace' ? (
           <WorkspacePage />
+        ) : page === 'settings' ? (
+          <SettingsPage />
         ) : (
           <PlaceholderPage page={page} onNavigate={navigate} />
         )}

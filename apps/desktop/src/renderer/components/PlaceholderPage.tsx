@@ -19,8 +19,7 @@ export function PlaceholderPage({ page, onNavigate }: PlaceholderPageProps) {
 
       {page === 'more' ? <MoreHub onNavigate={onNavigate} /> : null}
       {page === 'assistant' ? <AssistantHub onNavigate={onNavigate} /> : null}
-      {page === 'settings' ? <SettingsOverview /> : null}
-      {!['more', 'assistant', 'settings'].includes(page) ? (
+      {!['more', 'assistant'].includes(page) ? (
         <MilestoneCard page={page} onNavigate={onNavigate} />
       ) : null}
     </section>
@@ -104,24 +103,3 @@ function AssistantHub({ onNavigate }: Pick<PlaceholderPageProps, 'onNavigate'>) 
   );
 }
 
-function SettingsOverview() {
-  return (
-    <div className="settings-grid">
-      <div className="settings-card">
-        <strong>DeepSeek 文本模型</strong>
-        <span className="pill">未配置</span>
-        <p>M1 Task 05 接入接口地址、模型与系统密钥存储。</p>
-      </div>
-      <div className="settings-card">
-        <strong>语音转写</strong>
-        <span className="pill">未配置</span>
-        <p>M3 接入独立 ASR；当前不访问麦克风。</p>
-      </div>
-      <div className="settings-card">
-        <strong>本地 MCP</strong>
-        <span className="pill">未连接</span>
-        <p>M3 接入 stdio 工具、权限交集与调用记录。</p>
-      </div>
-    </div>
-  );
-}

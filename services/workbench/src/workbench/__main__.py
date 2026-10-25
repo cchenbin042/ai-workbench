@@ -17,6 +17,7 @@ from workbench.rpc import JsonLineDecoder, RpcRouter, encode_frame, error_respon
 
 from workbench import materials, workspaces
 from workbench.materials import GrantRegistry
+from workbench.providers import config as provider_config
 from workbench.storage import Storage, get_draft, save_draft, validate_command
 from workbench.tasks import TaskService
 
@@ -57,12 +58,21 @@ async def run_service(store: Storage) -> None:
                "tasks.get", "tasks.list", "tasks.cancel", "tasks.resume", "tasks.continue",
                "events.list", "operations.get",
                "workspaces.create", "workspaces.list", "workspaces.listLinks",
-               "workspaces.linkDirectory",
-               "workspaces.unlinkDirectory", "materials.listDirectory", "materials.importFiles",
-               "materials.importText", "materials.list", "materials.get",
-               "materials.checkFreshness", "materials.previewFile"]
-    tasks = TaskService(store, instance_id=instance_id)
+               "workspaces.linkDirectory", "workspaces.unlinkDirectory",
+               "materials.listDirectory", "materials.importFiles", "materials.importText",
+               "materials.list", "materials.get", "materials.checkFreshness",
+               "materials.previewFile", "providers.get", "providers.list", "providers.update",
+               "providers.setSecret", "providers.deleteSecret", "providers.test"]
     grants = materials.GrantRegistry()
+
+    async def generic_flow(service, task_id, run_id):
+        snapshot = await service.get(task_id)
+        action = snapshot["input"].get("action")
+        if action == provider_config.CONNECTION_TEST_ACTION:
+            return await provider_config.run_connection_test(service, task_id, run_id)
+        raise DomainError("FLOW_UNAVAILABLE", "This task flow is not available")
+
+    tasks = TaskService(store, handlers={"generic": generic_flow}, instance_id=instance_id)
     await tasks.recover_startup()
 
     def publish(event):
@@ -153,6 +163,24 @@ async def run_service(store: Storage) -> None:
     async def materials_preview_file(**command):
         return await materials.preview_file(command, store)
 
+    async def providers_get(**command):
+        return await provider_config.get_provider(command, store)
+
+    async def providers_list():
+        return await provider_config.list_providers(store)
+
+    async def providers_update(**command):
+        return await provider_config.update_provider(command, store)
+
+    async def providers_set_secret(**command):
+        return await provider_config.set_secret(command, store)
+
+    async def providers_delete_secret(**command):
+        return await provider_config.delete_secret(command, store)
+
+    async def providers_test(**command):
+        return await provider_config.test_provider(command, store, tasks)
+
     async def internal_register_grant(**command):
         return materials.register_grant(grants, **command)
 
@@ -177,6 +205,12 @@ async def run_service(store: Storage) -> None:
     router.register("materials.get", materials_get)
     router.register("materials.checkFreshness", materials_check_freshness)
     router.register("materials.previewFile", materials_preview_file)
+    router.register("providers.get", providers_get)
+    router.register("providers.list", providers_list)
+    router.register("providers.update", providers_update)
+    router.register("providers.setSecret", providers_set_secret)
+    router.register("providers.deleteSecret", providers_delete_secret)
+    router.register("providers.test", providers_test)
     # Main-process only: dialog results are registered here, never via the renderer.
     router.register("internal.registerGrant", internal_register_grant)
     router.register("system.initialize", initialize)

@@ -37,7 +37,7 @@ def operation(**patch):
 
 
 async def test_open_migrates_and_enables_durable_settings(store):
-    assert store.schema_version == 3
+    assert store.schema_version == 4
     settings = await store.transaction(lambda conn: {
         "wal": conn.execute("PRAGMA journal_mode").fetchone()[0],
         "full": conn.execute("PRAGMA synchronous").fetchone()[0],
@@ -47,7 +47,9 @@ async def test_open_migrates_and_enables_durable_settings(store):
     assert settings == {"wal": "wal", "full": 2, "fk": 1, "timeout": 5000}
     tables = {row["name"] for row in await store.read("SELECT name FROM sqlite_master WHERE type='table'")}
     assert tables == {"schema_migrations", "operations", "drafts", "notes", "tasks", "task_runs",
-                      "task_events", "workspaces", "directory_links", "materials", "material_versions"}
+                      "task_events", "workspaces", "directory_links", "materials", "material_versions",
+                      "provider_configs", "provider_config_versions", "agent_configs",
+                      "agent_config_versions"}
     assert (await store.read("PRAGMA integrity_check"))[0]["integrity_check"] == "ok"
 
 
@@ -354,13 +356,13 @@ async def test_newer_database_refuses_downgrade_without_modifying_data(tmp_path)
     await save_draft(draft(), store)
     await store.close()
     with sqlite3.connect(path) as conn:
-        conn.execute("INSERT INTO schema_migrations(version,checksum,applied_at) VALUES(4,?,?)",
+        conn.execute("INSERT INTO schema_migrations(version,checksum,applied_at) VALUES(5,?,?)",
                      ("a" * 64, "2026-10-18T00:00:00+00:00"))
     with pytest.raises(DomainError) as error:
         await Storage.open(path)
     assert error.value.code == "MIGRATION_FAILED"
     with sqlite3.connect(path) as conn:
-        assert conn.execute("SELECT max(version) FROM schema_migrations").fetchone()[0] == 4
+        assert conn.execute("SELECT max(version) FROM schema_migrations").fetchone()[0] == 5
         assert conn.execute("SELECT count(*) FROM drafts").fetchone()[0] == 1
 
 
